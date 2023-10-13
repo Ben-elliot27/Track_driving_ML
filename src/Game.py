@@ -17,19 +17,17 @@ reward_count: total number of rewards
 score_total: total number of rewards collected
 """
 
-import arcade
 import math
-import GLOBALS
-import TESTER
-import numpy as np
 
+import GLOBALS
+import arcade
+import numpy as np
 
 SPRITE_SCALING = 0.05
 
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 750
 SCREEN_TITLE = "Track learning"
-
 
 # Important constants
 
@@ -39,34 +37,33 @@ MAX_SPEED = 5.0
 # How fast we accelerate
 ACCELERATION_RATE = 0.5
 
-#How fast the car turns
+# How fast the car turns
 TURNING_RATE = 3
 
 # How fast to slow down after we let off the key
 FRICTION = 0.07
 
-#Initials for walls
+# Initials for walls
 WALL_COUNT = 8
 WALL_SCALING = [5.7, 4.1, 5.6, 4.1,
                 4.2, 2.9, 4.2, 2.9]
 X_POS = [490, 995, 490, 10,
-         490, 995-120, 485, 10+120]
+         490, 995 - 120, 485, 10 + 120]
 Y_POS = [10, 365, 730, 365,
-         10+120, 365, 740-120, 365]
+         10 + 120, 365, 740 - 120, 365]
 WALL_ANGLES = [0, 90, 0, 90, 0, 90, 0, 90]
 
-
-#Initials for rewards
+# Initials for rewards
 REWARD_COUNT = 8
 REWARD_SCALING = [.8, .8, .8, .8,
-                .8, .8, .8, .8]
+                  .8, .8, .8, .8]
 REWARD_X_POS = [332, 683, 950, 950,
-         770, 350, 64, 64]
+                770, 350, 64, 64]
 REWARD_Y_POS = [50, 50, 220, 400,
-         680, 680, 530, 250]
+                680, 680, 530, 250]
 REWARD_ANGLES = [90, 90, 0, 0, 90, 90, 0, 0]
 
-#Initials for rays
+# Initials for rays
 RAY_COUNT = 8
 RAY_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315]
 RAY_OFFSET = 25
@@ -74,23 +71,19 @@ RAY_DISTANCE = 10
 RAY_GAP = 10
 RAY_SCALING = 0.01
 
-
-
 DEAD = False
 
 global params
 
-
-
-
-#Initialise global variables
+# Initialise global variables
 GLOBALS.init()
 GLOBALS.ray_hit_list = np.array([0 for a in range(RAY_COUNT * RAY_DISTANCE)])
 GLOBALS.ray_distance = np.array([10 for a in range(RAY_COUNT)])
-#-----------------------------------------------------------------------------------------------------------------------
 
-#-----------------------------------------------------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------------------------------------------------
 
 
 class Player(arcade.Sprite):
@@ -100,15 +93,13 @@ class Player(arcade.Sprite):
         self.isDead = False
         self.change_vel = 0
 
-
-
     def update(self):
 
         self.current_vel += self.change_vel
 
         # Vcos(theta)
-        self.center_x += self.current_vel*math.cos(math.radians(self.angle))
-        self.center_y += self.current_vel*math.sin(math.radians(self.angle))
+        self.center_x += self.current_vel * math.cos(math.radians(self.angle))
+        self.center_y += self.current_vel * math.sin(math.radians(self.angle))
 
         # Check to see if we hit the screen edge
         if self.left < 0:
@@ -126,7 +117,7 @@ class Player(arcade.Sprite):
             self.change_y = 0
 
         if (self.change_x != 0 and self.change_y != 0):
-            self.angle = math.degrees(math.atan(self.change_y/self.change_x))
+            self.angle = math.degrees(math.atan(self.change_y / self.change_x))
 
     def player_movement(self, direction):
         """ Handles player movement
@@ -165,24 +156,27 @@ class Player(arcade.Sprite):
             self.isDead = False
 
 
-#-----------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------------
 class Wall(arcade.Sprite):
 
     def update(self):
         pass
 
-#-----------------------------------------------------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------------------------------------------------
 
 class Ray(arcade.Sprite):
 
     def update(self):
         pass
+
     def rotate_point_func(self, point_x, point_y, deg):
         self.position = arcade.rotate_point(
             self.center_x, self.center_y,
             point_x, point_y, deg)
 
-#-----------------------------------------------------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------------------------------------------------
 
 class MyGame(arcade.Window):
     """
@@ -225,18 +219,15 @@ class MyGame(arcade.Window):
         self.RAY_DELTA_Y = np.zeros((RAY_DISTANCE, RAY_COUNT))
         self.RAY_ANGLE_DELTA = np.zeros((RAY_DISTANCE, RAY_COUNT))
 
-
-
     def setup(self):
         """ Set up the game and initialize the variables. """
 
         # Sprite lists
 
-
         self.player_list = arcade.SpriteList()
-        self.wall_list = arcade.SpriteList(use_spatial_hash = True)
-        self.reward_list = arcade.SpriteList(use_spatial_hash = True) #visible = False
-        self.ray_list = arcade.SpriteList() #visible = False
+        self.wall_list = arcade.SpriteList(use_spatial_hash=True)
+        self.reward_list = arcade.SpriteList(use_spatial_hash=True)  # visible = False
+        self.ray_list = arcade.SpriteList()  # visible = False
 
         # Set up the player
         self.player_sprite = Player("./images/Car_sprite.png",
@@ -245,7 +236,6 @@ class MyGame(arcade.Window):
         self.player_sprite.center_y = 50
         self.player_list.append(self.player_sprite)
         self.player_sprite.initialise()
-
 
         for i in range(WALL_COUNT):
             # Set up the wall
@@ -256,16 +246,13 @@ class MyGame(arcade.Window):
             self.wall_sprite.angle = WALL_ANGLES[i]
             self.wall_list.append(self.wall_sprite)
 
-
         # Set up the rewards
         self.reward_sprite = Wall("./images/wall_sprite.png",
-                                REWARD_SCALING[0])
+                                  REWARD_SCALING[0])
         self.reward_sprite.center_x = REWARD_X_POS[0]
         self.reward_sprite.center_y = REWARD_Y_POS[0]
         self.reward_sprite.angle = REWARD_ANGLES[0]
         self.reward_list.append(self.reward_sprite)
-
-
 
         for i in range(RAY_DISTANCE):
             for a in range(RAY_COUNT):
@@ -276,19 +263,14 @@ class MyGame(arcade.Window):
         self.RAY_DELTA_Y = self.RAY_DELTA_Y.flatten().tolist()
         self.RAY_ANGLE_DELTA = self.RAY_ANGLE_DELTA.flatten().tolist()
 
-
         for i in range(RAY_COUNT * RAY_DISTANCE):
             # Set up the rays
             self.ray_sprite = Ray("./images/Circle_sprite.png",
-                                    RAY_SCALING)
+                                  RAY_SCALING)
             self.ray_sprite.center_x = 50
             self.ray_sprite.center_y = 50
             self.ray_sprite.angle = self.RAY_ANGLE_DELTA[i]
             self.ray_list.append(self.ray_sprite)
-
-
-
-
 
     def on_draw(self):
         """
@@ -309,20 +291,17 @@ class MyGame(arcade.Window):
         arcade.draw_text(f"Angle: {self.player_sprite.angle % 360:6.3f}", 10, 70, arcade.color.BLACK)
         arcade.draw_text(f"xPOS: {self.player_sprite.center_x:6.3f}", 10, 90, arcade.color.BLACK)
         arcade.draw_text(f"yPOS: {self.player_sprite.center_y:6.3f}", 10, 110, arcade.color.BLACK)
-        #arcade.draw_text(f"yPOS: {GLOBALS.ray_distance}", 10, 110, arcade.color.BLACK)
-
+        # arcade.draw_text(f"yPOS: {GLOBALS.ray_distance}", 10, 110, arcade.color.BLACK)
 
     def on_update(self, delta_time):
         """ Movement and game logic """
 
-
         self.player_list.update()
 
-        #Check which rays are touching a wall
+        # Check which rays are touching a wall
         self.ray_detection()
 
-
-        #Update Ray position to move with player
+        # Update Ray position to move with player
         for i in range(len(self.ray_list)):
             self.ray_list[i].center_x = self.player_list[0].center_x + self.RAY_DELTA_X[i]
             self.ray_list[i].center_y = self.player_list[0].center_y + self.RAY_DELTA_Y[i]
@@ -330,10 +309,10 @@ class MyGame(arcade.Window):
             self.ray_list[i].rotate_point_func(self.player_sprite.center_x, self.player_sprite.center_y,
                                                self.player_list[0].angle)
 
-        #Get distance to nearest reward
+        # Get distance to nearest reward
         GLOBALS.closest_reward = arcade.get_distance_between_sprites(self.player_list[0], self.reward_sprite)
 
-        #Check if reward is hit
+        # Check if reward is hit
         if arcade.check_for_collision(self.player_sprite, self.reward_sprite):
             GLOBALS.reward_count += 1
             GLOBALS.score_total += 1
@@ -343,9 +322,7 @@ class MyGame(arcade.Window):
             self.reward_sprite.angle = REWARD_ANGLES[GLOBALS.REWARD_INDEX]
             self.reward_sprite.scaling = REWARD_SCALING[GLOBALS.REWARD_INDEX]
 
-
         GLOBALS.ray_hit_list = [0 for a in range(RAY_COUNT * RAY_DISTANCE)]
-
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
@@ -356,7 +333,6 @@ class MyGame(arcade.Window):
             self.player_sprite.player_movement([0, 1, 0])
         elif key == arcade.key.RIGHT:
             self.player_sprite.player_movement([0, 0, 1])
-
 
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
@@ -391,33 +367,14 @@ class MyGame(arcade.Window):
                 GLOBALS.ray_distance[i] = 10
 
 
-
-
-
-
-
-
 def main():
     """ Main function """
     GLOBALS.game_window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
     GLOBALS.game_window.setup()
     arcade.run()
 
+
 if __name__ == "__main__":
     main()
 
-
-
 # --------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-

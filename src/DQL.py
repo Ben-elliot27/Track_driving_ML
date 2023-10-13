@@ -3,17 +3,15 @@ Script to create NN using torch -- intend to replace with a tensorflow model
 NOT WORKING
 """
 
+import collections
 import random
+
+import GLOBALS
 import numpy as np
 import pandas as pd
-from operator import add
-import collections
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-import copy
-import GLOBALS
 
 DEVICE = 'cpu'  # 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -112,7 +110,7 @@ class DQNAgent(torch.nn.Module):
         if GLOBALS.DEAD:
             self.reward = -10
             return self.reward
-        if GLOBALS.reward_count >= 1: ##ADD A THING FOR MAKING A REWARD
+        if GLOBALS.reward_count >= 1:  ##ADD A THING FOR MAKING A REWARD
             GLOBALS.reward_count = 0
             self.reward = 10
         return self.reward
@@ -169,7 +167,3 @@ class DQNAgent(torch.nn.Module):
         loss = F.mse_loss(output, target_f)
         loss.backward()
         self.optimizer.step()
-
-
-
-

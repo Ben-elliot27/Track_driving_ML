@@ -3,24 +3,12 @@ MAIN QLearning AI script -- based off Torch NN
 NOT WORKING
 """
 
-
-import os
-#import pygame
-import argparse
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-from DQL import DQNAgent
-from random import randint
-import random
-import statistics
-import torch.optim as optim
-import torch
-#from GPyOpt.methods import BayesianOptimization
+# import pygame
+# from GPyOpt.methods import BayesianOptimization
 import datetime
-import distutils.util
-import arcade
+
 import GLOBALS
+
 
 #################################
 #   Define parameters manually  #
@@ -44,11 +32,13 @@ def define_parameters():
     params['log_path'] = 'logs/scores_' + str(datetime.datetime.now().strftime("%Y%m%d%H%M%S")) + '.txt'
     return params
 
+
 def get_record(score, record):
     if score >= record:
         return score
     else:
         return record
+
 
 def initialize_game(player, game, food, agent, batch_size):
     state_init1 = agent.get_state()  # [0 0 0 0 0 0 0 0 0 1 0 0 0 1 0 0]
