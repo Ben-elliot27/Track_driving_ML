@@ -337,11 +337,7 @@ class MyGame(arcade.Window):
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
 
-        if key == arcade.key.UP:
-            self.player_sprite.player_movement([0, 0, 0])
-        elif key == arcade.key.LEFT:
-            self.player_sprite.player_movement([0, 0, 0])
-        elif key == arcade.key.RIGHT:
+        if key == arcade.key.UP or key == arcade.key.LEFT or key == arcade.key.RIGHT:
             self.player_sprite.player_movement([0, 0, 0])
 
     def AI_setup(self):
