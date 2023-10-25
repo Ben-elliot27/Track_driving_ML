@@ -23,6 +23,14 @@ import GLOBALS
 import arcade
 import numpy as np
 
+import os
+import pathlib
+
+CAR_SPRITE_IMG = "../images/Car_sprite.png"
+CIRCLE_SPRITE_IMG = '../images/Circle_sprite.png'
+WALL_SPRITE_IMG = '../images/wall_sprite.png'
+
+
 SPRITE_SCALING = 0.05
 
 SCREEN_WIDTH = 1000
@@ -32,7 +40,7 @@ SCREEN_TITLE = "Track learning"
 # Important constants
 
 # Speed limit
-MAX_SPEED = 5.0
+MAX_SPEED = 3.0
 
 # How fast we accelerate
 ACCELERATION_RATE = 0.5
@@ -230,7 +238,7 @@ class MyGame(arcade.Window):
         self.ray_list = arcade.SpriteList()  # visible = False
 
         # Set up the player
-        self.player_sprite = Player("./images/Car_sprite.png",
+        self.player_sprite = Player(CAR_SPRITE_IMG,
                                     SPRITE_SCALING)
         self.player_sprite.center_x = 50
         self.player_sprite.center_y = 50
@@ -239,7 +247,7 @@ class MyGame(arcade.Window):
 
         for i in range(WALL_COUNT):
             # Set up the wall
-            self.wall_sprite = Wall("./images/wall_sprite.png",
+            self.wall_sprite = Wall(WALL_SPRITE_IMG,
                                     WALL_SCALING[i])
             self.wall_sprite.center_x = X_POS[i]
             self.wall_sprite.center_y = Y_POS[i]
@@ -247,7 +255,7 @@ class MyGame(arcade.Window):
             self.wall_list.append(self.wall_sprite)
 
         # Set up the rewards
-        self.reward_sprite = Wall("./images/wall_sprite.png",
+        self.reward_sprite = Wall(WALL_SPRITE_IMG,
                                   REWARD_SCALING[0])
         self.reward_sprite.center_x = REWARD_X_POS[0]
         self.reward_sprite.center_y = REWARD_Y_POS[0]
@@ -265,7 +273,7 @@ class MyGame(arcade.Window):
 
         for i in range(RAY_COUNT * RAY_DISTANCE):
             # Set up the rays
-            self.ray_sprite = Ray("./images/Circle_sprite.png",
+            self.ray_sprite = Ray(CIRCLE_SPRITE_IMG,
                                   RAY_SCALING)
             self.ray_sprite.center_x = 50
             self.ray_sprite.center_y = 50
