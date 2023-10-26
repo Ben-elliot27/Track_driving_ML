@@ -23,26 +23,6 @@ import math
 import arcade
 import numpy as np
 
-
-
-
-
-SCREEN_WIDTH = 1000
-SCREEN_HEIGHT = 750
-SCREEN_TITLE = "Track learning"
-
-# Important constants
-
-
-global params
-
-# Initialise global variables
-ray_hit_list = np.array([0 for a in range(RAY_COUNT * RAY_DISTANCE)])
-ray_distance = np.array([10 for a in range(RAY_COUNT)])
-
-
-# -----------------------------------------------------------------------------------------------------------------------
-
 # -----------------------------------------------------------------------------------------------------------------------
 
 
@@ -73,15 +53,33 @@ class Player(arcade.Sprite):
         self.RAY_GAP = 10
         self.RAY_SCALING = 0.01
 
+        # Initials for rewards
+        self.REWARD_COUNT = 8
+        self.REWARD_SCALING = [.8, .8, .8, .8,
+                          .8, .8, .8, .8]
+        self.REWARD_X_POS = [332, 683, 950, 950,
+                        770, 350, 64, 64]
+        self.REWARD_Y_POS = [50, 50, 220, 400,
+                        680, 680, 530, 250]
+        self.REWARD_ANGLES = [90, 90, 0, 0, 90, 90, 0, 0]
+
         # Jammy way of getting the individual rays to work
         self.RAY_DELTA_X = np.zeros((self.RAY_DISTANCE, self.RAY_COUNT))
         self.RAY_DELTA_Y = np.zeros((self.RAY_DISTANCE, self.RAY_COUNT))
         self.RAY_ANGLE_DELTA = np.zeros((self.RAY_DISTANCE, self.RAY_COUNT))
 
-        self.ray_list = None
+        self.ray_list = []
 
-        self.ray_distance = None
+        self.ray_hit_list = np.array([0 for a in range(self.RAY_COUNT * self.RAY_DISTANCE)])
+        self.ray_distance = np.array([10 for a in range(self.RAY_COUNT)]) #USED IN NN
 
+        self.spawn_rewards() #Set up the first reward
+
+        self.reward_distance = 10000 #USED IN NN
+
+        self.reward_count = 0
+
+        self.reward_index = 0
 
         self.spawn_rays()
 
@@ -106,6 +104,17 @@ class Player(arcade.Sprite):
 
         self.ray_list.draw()
 
+    def spawn_rewards(self):
+        # Set up the rewards
+        self.reward_sprite = Wall(self.WALL_SPRITE_IMG,
+                                  self.REWARD_SCALING[0])
+        self.reward_sprite.center_x = self.REWARD_X_POS[0]
+        self.reward_sprite.center_y = self.REWARD_Y_POS[0]
+        self.reward_sprite.angle = self.REWARD_ANGLES[0]
+        self.reward_list.append(self.reward_sprite)
+
+        self.reward_list.draw()
+
     def update(self, wall_list):
         """
         :param wall_list: list of wall arcade objects
@@ -117,11 +126,16 @@ class Player(arcade.Sprite):
         self.center_x += self.current_vel * math.cos(math.radians(self.angle))
         self.center_y += self.current_vel * math.sin(math.radians(self.angle))
 
-        self.update_screen_edge_hit()
+        self.collision_with_wall()
 
         self.update_angle()
 
         self.update_ray_positions()
+
+        self.update_ray_hit_list(wall_list)
+
+        self.update_rewards()
+
 
     def update_ray_positions(self):
         # Update Ray position to move with player
@@ -131,22 +145,6 @@ class Player(arcade.Sprite):
             self.ray_list[i].angle = self.angle + self.RAY_ANGLE_DELTA[i]
             self.ray_list[i].rotate_point_func(self.center_x, self.center_y,
                                                self.angle)
-
-    def update_screen_edge_hit(self):
-        # Check to see if we hit the screen edge
-        if self.left < 0:
-            self.left = 0
-            self.change_x = 0  # Zero x speed
-        elif self.right > SCREEN_WIDTH - 1:
-            self.right = SCREEN_WIDTH - 1
-            self.change_x = 0
-
-        if self.bottom < 0:
-            self.bottom = 0
-            self.change_y = 0
-        elif self.top > SCREEN_HEIGHT - 1:
-            self.top = SCREEN_HEIGHT - 1
-            self.change_y = 0
 
     def update_angle(self):
         if (self.change_x != 0 and self.change_y != 0):
@@ -174,7 +172,8 @@ class Player(arcade.Sprite):
 
     def player_movement(self, direction):
         """ Handles player movement
-         input: [UP, LEFT, RIGHT]"""
+         input: [UP, LEFT, RIGHT]
+         ie [1, 0, 0] is UP"""
         input = direction
         self.change_vel = 0
 
@@ -205,8 +204,30 @@ class Player(arcade.Sprite):
                                                         self.wall_list)
         if len(hit_list) != 0:
             self.isDead = True
+            self.death_sequence()
         else:
             self.isDead = False
+
+    def death_sequence(self):
+        #Function to control what happens when the player touches a wall and 'dies'
+        ### FOR NOW: just sets player to red color
+        self.color = arcade.color.RED
+
+    def update_rewards(self):
+        # A funcion to update the reward count of the player
+
+        #self.reward_sprite might not be defined in right scope
+        #Gets distance to the closest reward
+        self.reward_distance = arcade.get_distance_between_sprites(self.player_list[0], self.reward_sprite)
+
+        if arcade.check_for_collision(self, self.reward_sprite):
+            self.reward_count += 1
+            self.reward_index = (self.reward_index + 1) % 8
+            self.reward_sprite.center_x = self.REWARD_X_POS[self.REWARD_INDEX]
+            self.reward_sprite.center_y =self. REWARD_Y_POS[self.REWARD_INDEX]
+            self.reward_sprite.angle = self.REWARD_ANGLES[self.REWARD_INDEX]
+            self.reward_sprite.scaling = self.REWARD_SCALING[self.REWARD_INDEX]
+
 
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -247,7 +268,6 @@ class MyGame(arcade.Window):
         # Variables that will hold sprite lists
         self.player_list = None
         self.wall_list = None
-        self.reward_list = None
 
 
         # Set up the player info
@@ -255,7 +275,6 @@ class MyGame(arcade.Window):
 
         # Set up wall info
         self.wall_sprite = None
-        self.reward_sprite = None
         self.ray_sprite = None
 
         # Set the background color
@@ -278,16 +297,6 @@ class MyGame(arcade.Window):
         self.Y_POS = [10, 365, 730, 365,
                  10 + 120, 365, 740 - 120, 365]
         self.WALL_ANGLES = [0, 90, 0, 90, 0, 90, 0, 90]
-
-        # Initials for rewards
-        self.REWARD_COUNT = 8
-        self.REWARD_SCALING = [.8, .8, .8, .8,
-                          .8, .8, .8, .8]
-        self.REWARD_X_POS = [332, 683, 950, 950,
-                        770, 350, 64, 64]
-        self.REWARD_Y_POS = [50, 50, 220, 400,
-                        680, 680, 530, 250]
-        self.REWARD_ANGLES = [90, 90, 0, 0, 90, 90, 0, 0]
 
 
 
@@ -328,17 +337,6 @@ class MyGame(arcade.Window):
         #Draw walls
         self.wall_list.draw()
 
-    def spawn_rewards(self):
-        # Set up the rewards
-        self.reward_sprite = Wall(self.WALL_SPRITE_IMG,
-                                  self.REWARD_SCALING[0])
-        self.reward_sprite.center_x = self.REWARD_X_POS[0]
-        self.reward_sprite.center_y = self.REWARD_Y_POS[0]
-        self.reward_sprite.angle = self.REWARD_ANGLES[0]
-        self.reward_list.append(self.reward_sprite)
-
-        self.reward_list.draw()
-
     def on_draw(self):
         """
         Render the screen.
@@ -355,33 +353,16 @@ class MyGame(arcade.Window):
 
 
         # Display text
-        arcade.draw_text(f"Velocity: {self.player_sprite.current_vel:6.3f}", 10, 50, arcade.color.BLACK)
-        arcade.draw_text(f"Angle: {self.player_sprite.angle % 360:6.3f}", 10, 70, arcade.color.BLACK)
-        arcade.draw_text(f"xPOS: {self.player_sprite.center_x:6.3f}", 10, 90, arcade.color.BLACK)
-        arcade.draw_text(f"yPOS: {self.player_sprite.center_y:6.3f}", 10, 110, arcade.color.BLACK)
+        for player_sprite in self.player_list:
+            arcade.draw_text(f"Velocity: {player_sprite.current_vel:6.3f}", 10, 50, arcade.color.BLACK)
+            arcade.draw_text(f"Angle: {player_sprite.angle % 360:6.3f}", 10, 70, arcade.color.BLACK)
+            arcade.draw_text(f"xPOS: {player_sprite.center_x:6.3f}", 10, 90, arcade.color.BLACK)
+            arcade.draw_text(f"yPOS: {player_sprite.center_y:6.3f}", 10, 110, arcade.color.BLACK)
 
     def on_update(self, delta_time):
         """ Movement and game logic """
 
         self.player_list.update(self.wall_list)
-
-        # Check which rays are touching a wall
-        self.ray_detection()
-
-        # Get distance to nearest reward
-        self.closest_reward = arcade.get_distance_between_sprites(self.player_list[0], self.reward_sprite)
-
-        # Check if reward is hit
-        if arcade.check_for_collision(self.player_sprite, self.reward_sprite):
-            GLOBALS.reward_count += 1
-            GLOBALS.score_total += 1
-            GLOBALS.REWARD_INDEX = (GLOBALS.REWARD_INDEX + 1) % 8
-            self.reward_sprite.center_x = REWARD_X_POS[GLOBALS.REWARD_INDEX]
-            self.reward_sprite.center_y = REWARD_Y_POS[GLOBALS.REWARD_INDEX]
-            self.reward_sprite.angle = REWARD_ANGLES[GLOBALS.REWARD_INDEX]
-            self.reward_sprite.scaling = REWARD_SCALING[GLOBALS.REWARD_INDEX]
-
-        GLOBALS.ray_hit_list = [0 for a in range(RAY_COUNT * RAY_DISTANCE)]
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
@@ -408,8 +389,13 @@ class MyGame(arcade.Window):
 
 def main():
     """ Main function """
+    SCREEN_WIDTH = 1000
+    SCREEN_HEIGHT = 750
+    SCREEN_TITLE = "Track learning"
     game_window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
     game_window.setup()
     arcade.run()
 
 # --------------------------------------------------------------------------------------
+
+main()
