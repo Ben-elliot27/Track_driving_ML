@@ -1,27 +1,19 @@
 """
-EDITED ST ACTS AS AN INDIVIDUAL OBJECT
+Edited version of the Game script st the variables and methods are attached to the player rather than the screen.
 
 Script to run a python arcade driving game with visible 'raycasts' and checkpoints for implementing a machine learning
-model to train on. Currently cannot hold turn button to turn as thought this was a better setup for the NN model.
+model to train on.
 
 Because it uses arcade, a simple game library, it doesn't have many features such as proper raycasts so they are
 implemented 'dodgily' as a series of individual objects.
 
-Global variables saved from script:
-ray_hit_list: list of rays colliding with a wall
-ray_distance: distance along ray to collision with wall
-game_window: the arcade game window object
-DEAD: whether player has collided with wall
-closest_reward: distance to closest reward to player
-player_angle: current angle of the player
-REWARD_INDEX: index in list of the reward
-reward_count: total number of rewards
-score_total: total number of rewards collected
+
 """
 
 import math
 import arcade
 import numpy as np
+import pickle
 
 # -----------------------------------------------------------------------------------------------------------------------
 
@@ -53,6 +45,12 @@ class Player(arcade.Sprite):
         self.RAY_GAP = 10
         self.RAY_SCALING = 0.01
 
+        #image initialsiation
+        self.CAR_SPRITE_IMG = "../images/Car_sprite.png"
+        self.CIRCLE_SPRITE_IMG = '../images/Circle_sprite.png'
+        self.WALL_SPRITE_IMG = '../images/wall_sprite.png'
+        self.SPRITE_SCALING = 0.05
+
         # Initials for rewards
         self.REWARD_COUNT = 8
         self.REWARD_SCALING = [.8, .8, .8, .8,
@@ -63,12 +61,15 @@ class Player(arcade.Sprite):
                         680, 680, 530, 250]
         self.REWARD_ANGLES = [90, 90, 0, 0, 90, 90, 0, 0]
 
+        self.wall_list = arcade.SpriteList(use_spatial_hash=True)
+        self.reward_list = arcade.SpriteList(use_spatial_hash=True)  # visible = False
+
         # Jammy way of getting the individual rays to work
         self.RAY_DELTA_X = np.zeros((self.RAY_DISTANCE, self.RAY_COUNT))
         self.RAY_DELTA_Y = np.zeros((self.RAY_DISTANCE, self.RAY_COUNT))
         self.RAY_ANGLE_DELTA = np.zeros((self.RAY_DISTANCE, self.RAY_COUNT))
 
-        self.ray_list = []
+        self.ray_list = arcade.SpriteList(use_spatial_hash=True)
 
         self.ray_hit_list = np.array([0 for a in range(self.RAY_COUNT * self.RAY_DISTANCE)])
         self.ray_distance = np.array([10 for a in range(self.RAY_COUNT)]) #USED IN NN
@@ -115,24 +116,31 @@ class Player(arcade.Sprite):
 
         self.reward_list.draw()
 
-    def update(self, wall_list):
+    def update(self):
         """
         :param wall_list: list of wall arcade objects
         :return:
         """
+        #Update speed
+        if self.current_vel < self.MAX_SPEED:
+            self.current_vel += self.change_vel
+        elif self.current_vel >= self.MAX_SPEED:
+            self.current_vel = self.MAX_SPEED
 
-        self.current_vel += self.change_vel
+        # Add some friction
+        if self.current_vel > self.FRICTION:
+            self.current_vel -= self.FRICTION
+        elif self.current_vel < -self.FRICTION:
+            self.current_vel += self.FRICTION
+        else:
+            self.current_vel = 0
 
         self.center_x += self.current_vel * math.cos(math.radians(self.angle))
         self.center_y += self.current_vel * math.sin(math.radians(self.angle))
 
-        self.collision_with_wall()
-
         self.update_angle()
 
         self.update_ray_positions()
-
-        self.update_ray_hit_list(wall_list)
 
         self.update_rewards()
 
@@ -174,16 +182,9 @@ class Player(arcade.Sprite):
         """ Handles player movement
          input: [UP, LEFT, RIGHT]
          ie [1, 0, 0] is UP"""
+
         input = direction
         self.change_vel = 0
-
-        # Add some friction
-        if self.current_vel > self.FRICTION:
-            self.current_vel -= self.FRICTION
-        elif self.current_vel < -self.FRICTION:
-            self.current_vel += self.FRICTION
-        else:
-            self.current_vel = 0
 
         # Apply acceleration based on the keys pressed
         if input[0] == 1:
@@ -193,15 +194,10 @@ class Player(arcade.Sprite):
         elif input[2] == 1 and input[1] != 1:
             self.angle += -self.TURNING_RATE
 
-        if self.current_vel > self.MAX_SPEED:
-            self.current_vel = self.MAX_SPEED
-        elif self.current_vel < -self.MAX_SPEED:
-            self.current_vel = -self.MAX_SPEED
-
-    def collision_with_wall(self):
+    def collision_with_wall(self, wall_list):
         # Generate a list of all walls that collided with the player.
-        hit_list = arcade.check_for_collision_with_list(self.player_sprite,
-                                                        self.wall_list)
+        hit_list = arcade.check_for_collision_with_list(self,
+                                                        wall_list)
         if len(hit_list) != 0:
             self.isDead = True
             self.death_sequence()
@@ -210,23 +206,22 @@ class Player(arcade.Sprite):
 
     def death_sequence(self):
         #Function to control what happens when the player touches a wall and 'dies'
-        ### FOR NOW: just sets player to red color
-        self.color = arcade.color.RED
+        print("isDead")
 
     def update_rewards(self):
         # A funcion to update the reward count of the player
 
         #self.reward_sprite might not be defined in right scope
         #Gets distance to the closest reward
-        self.reward_distance = arcade.get_distance_between_sprites(self.player_list[0], self.reward_sprite)
+        self.reward_distance = arcade.get_distance_between_sprites(self, self.reward_sprite)
 
         if arcade.check_for_collision(self, self.reward_sprite):
             self.reward_count += 1
             self.reward_index = (self.reward_index + 1) % 8
-            self.reward_sprite.center_x = self.REWARD_X_POS[self.REWARD_INDEX]
-            self.reward_sprite.center_y =self. REWARD_Y_POS[self.REWARD_INDEX]
-            self.reward_sprite.angle = self.REWARD_ANGLES[self.REWARD_INDEX]
-            self.reward_sprite.scaling = self.REWARD_SCALING[self.REWARD_INDEX]
+            self.reward_sprite.center_x = self.REWARD_X_POS[self.reward_index]
+            self.reward_sprite.center_y =self. REWARD_Y_POS[self.reward_index]
+            self.reward_sprite.angle = self.REWARD_ANGLES[self.reward_index]
+            self.reward_sprite.scaling = self.REWARD_SCALING[self.reward_index]
 
 
 
@@ -311,6 +306,11 @@ class MyGame(arcade.Window):
         self.reward_list = arcade.SpriteList(use_spatial_hash=True)  # visible = False
         self.ray_list = arcade.SpriteList()  # visible = False
 
+        # Spawn and draw all the sprites.
+        #Spawn objects
+        self.spawn_walls()
+        self.spawn_player()
+
 
     def spawn_player(self):
         # Set up the player
@@ -345,11 +345,11 @@ class MyGame(arcade.Window):
         # This command has to happen before start drawing
         self.clear()
 
-        # Spawn and draw all the sprites.
-        #Spawn objects
-        self.spawn_walls()
-        self.spawn_player()
-        self.spawn_rewards()
+        # Draw all the sprites.
+        self.player_list.draw()
+        self.wall_list.draw()
+        self.reward_list.draw()
+        self.ray_list.draw()
 
 
         # Display text
@@ -362,7 +362,10 @@ class MyGame(arcade.Window):
     def on_update(self, delta_time):
         """ Movement and game logic """
 
-        self.player_list.update(self.wall_list)
+        self.player_list.update()
+        for player in self.player_list:
+            player.update_ray_hit_list(self.wall_list)
+            player.collision_with_wall(self.wall_list)
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
@@ -394,6 +397,18 @@ def main():
     SCREEN_TITLE = "Track learning"
     game_window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
     game_window.setup()
+
+    #Add the gamewindow to file containing list of game_windows
+    fr = open("game_windows", 'rb')
+    try:
+        dt = pickle.load(fr)
+    except EOFError:
+        dt = []
+    fr.close()
+    fw = open("game_windows", 'wb')
+    pickle.dump(dt.append(game_window), fw)
+    fw.close()
+
     arcade.run()
 
 # --------------------------------------------------------------------------------------
