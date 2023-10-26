@@ -13,7 +13,8 @@ implemented 'dodgily' as a series of individual objects.
 import math
 import arcade
 import numpy as np
-import pickle
+import running_windows
+
 
 # -----------------------------------------------------------------------------------------------------------------------
 
@@ -398,19 +399,12 @@ def main():
     game_window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
     game_window.setup()
 
-    #Add the gamewindow to file containing list of game_windows
-    fr = open("game_windows", 'rb')
-    try:
-        dt = pickle.load(fr)
-    except EOFError:
-        dt = []
-    fr.close()
-    fw = open("game_windows", 'wb')
-    pickle.dump(dt.append(game_window), fw)
-    fw.close()
-
+    #Add window to running windows
+    running_windows.running_window_list.append(game_window)
     arcade.run()
+
+
 
 # --------------------------------------------------------------------------------------
 
-main()
+
