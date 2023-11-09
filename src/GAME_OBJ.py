@@ -391,6 +391,8 @@ class MyGame(arcade.Window):
 
 
 
+
+
 def main():
     """ Main function """
     SCREEN_WIDTH = 1000
