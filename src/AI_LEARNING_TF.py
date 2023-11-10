@@ -1,4 +1,6 @@
-import tensorflow as tf
+#import tensorflow as tf
+import GAME_OBJ
+import asyncio
 
 """
 SCRIPT FOR AI
@@ -18,3 +20,15 @@ BACK
 """
 
 
+async def main():
+
+    await asyncio.gather(
+        asyncio.to_thread(GAME_OBJ.main()),
+        print_something()
+    )
+
+
+async def print_something():
+    print("hi")
+
+asyncio.run(main())

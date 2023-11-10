@@ -13,7 +13,8 @@ implemented 'dodgily' as a series of individual objects.
 import math
 import arcade
 import numpy as np
-import running_windows
+
+
 
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -224,6 +225,9 @@ class Player(arcade.Sprite):
             self.reward_sprite.angle = self.REWARD_ANGLES[self.reward_index]
             self.reward_sprite.scaling = self.REWARD_SCALING[self.reward_index]
 
+    def add_AI(self):
+        pass
+
 
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -400,13 +404,13 @@ def main():
     SCREEN_TITLE = "Track learning"
     game_window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
     game_window.setup()
-
-    #Add window to running windows
-    running_windows.running_window_list.append(game_window)
     arcade.run()
 
 
 
 # --------------------------------------------------------------------------------------
+
+
+main()
 
 
