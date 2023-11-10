@@ -1,6 +1,4 @@
-#import tensorflow as tf
-import GAME_OBJ
-import asyncio
+from tensorflow import keras
 
 """
 SCRIPT FOR AI
@@ -20,6 +18,23 @@ BACK
 """
 
 
+
+def initialise_NN_for_player():
+    """
+    Script which initialises the NN for a player
+    SIZE: [11, N, 4]
+    :return: TensorFlow model
+    """
+    model = keras.models.Sequential([
+    keras.layers.Flatten(input_shape=11),
+    keras.layers.Dense(128, activation='relu'),
+    keras.layers.Dropout(0.2),
+    keras.layers.Dense(10)
+    ])
+
+
+
+"""
 async def main():
 
     await asyncio.gather(
@@ -32,3 +47,4 @@ async def print_something():
     print("hi")
 
 asyncio.run(main())
+"""
