@@ -7,6 +7,7 @@ import numpy as np
 import math
 from Wall import Wall
 from Ray import Ray
+from tensorflow import keras
 
 class Player(arcade.Sprite):
 
@@ -73,6 +74,13 @@ class Player(arcade.Sprite):
         self.reward_index = 0
 
         self.spawn_rays()
+
+        self.model = keras.models.Sequential([
+            keras.layers.Flatten(input_shape=11),
+            keras.layers.Dense(128, activation='relu'),
+            keras.layers.Dropout(0.2),
+            keras.layers.Dense(10)
+        ])
 
         #Set up cost
         self.cost = 0
@@ -225,5 +233,3 @@ class Player(arcade.Sprite):
         else:
             return (self.reward_count * 1000) + (1/self.reward_distance * 10)
 
-    def add_AI(self):
-        pass

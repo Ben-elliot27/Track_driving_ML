@@ -64,6 +64,8 @@ class MyGame(arcade.Window):
                  10 + 120, 365, 740 - 120, 365]
         self.WALL_ANGLES = [0, 90, 0, 90, 0, 90, 0, 90]
 
+        self.player_spawn_pos = [50, 50]
+
 
 
 
@@ -80,7 +82,7 @@ class MyGame(arcade.Window):
         # Spawn and draw all the sprites.
         #Spawn objects
         self.spawn_walls()
-        self.spawn_player()
+        #self.spawn_player()
 
         if LEARNING_METHOD == "Evolution":
             Evolution_learning(self)
@@ -91,8 +93,8 @@ class MyGame(arcade.Window):
         # Set up the player
         self.player_sprite = Player(self.CAR_SPRITE_IMG,
                                     self.SPRITE_SCALING)
-        self.player_sprite.center_x = 50
-        self.player_sprite.center_y = 50
+        self.player_sprite.center_x = self.player_spawn_pos[0]
+        self.player_sprite.center_y = self.player_spawn_pos[1]
         self.player_list.append(self.player_sprite)
         self.player_sprite.initialise()
 
