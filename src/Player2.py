@@ -1,7 +1,6 @@
 """
+THIS SCRIPT WORKS FOR USER INPUT RATHER THAN NN INPUTS
 The player class for the game
-TODO: Make player not interact with other players
-TODO: Make player able to move through NN
 """
 
 import arcade
@@ -9,7 +8,7 @@ import numpy as np
 import math
 from Wall import Wall
 from Ray import Ray
-
+from tensorflow import keras
 
 class Player(arcade.Sprite):
 
@@ -84,9 +83,6 @@ class Player(arcade.Sprite):
         #Set up cost
         self.cost = 0
 
-        self.NN_inputs = np.array([self.current_vel/self.MAX_SPEED, self.angle/360, self.reward_distance/100, #ray distance normalising needs working on
-                                   np.array(self.ray_distance)/10]).flatten()
-
     def spawn_rays(self):
         for i in range(self.RAY_DISTANCE):
             for a in range(self.RAY_COUNT):
@@ -125,8 +121,6 @@ class Player(arcade.Sprite):
         """
         if self.isActive:
             #Update speed
-            self.AI_movement()
-
             if self.current_vel < self.MAX_SPEED:
                 self.current_vel += self.change_vel
             elif self.current_vel >= self.MAX_SPEED:
@@ -186,18 +180,6 @@ class Player(arcade.Sprite):
             except IndexError:
                 self.ray_distance[i] = 10
 
-    def AI_movement(self):
-        self.NN_inputs = np.array([self.current_vel / self.MAX_SPEED, self.angle / 360, self.reward_distance / 100,
-                                   np.array(self.ray_distance) / 10]).flatten()
-        move = self.model.predict(self.NN_inputs)
-
-        self.change_vel += move[0] * self.ACCELERATION_RATE
-        self.change_vel -= move[3] * self.ACCELERATION_RATE
-
-        self.angle += move[1] * self.TURNING_RATE
-        self.angle -= move[2] * self.TURNING_RATE
-
-
 
     def player_movement(self, direction):
         """ Handles player movement
@@ -214,12 +196,6 @@ class Player(arcade.Sprite):
             self.angle += self.TURNING_RATE
         elif input[2] == 1 and input[1] != 1:
             self.angle += -self.TURNING_RATE
-
-
-
-
-        try:
-            if input[3] == 1
 
     def collision_with_wall(self, wall_list):
         # Generate a list of all walls that collided with the player.

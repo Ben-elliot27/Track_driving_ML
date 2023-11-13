@@ -7,7 +7,6 @@ model to train on.
 Because it uses arcade, a simple game library, it doesn't have many features such as proper raycasts so they are
 implemented 'dodgily' as a series of individual objects.
 
-Add extra script - game controller - which can handle training of NN and resetting of all objects etc.
 
 """
 
@@ -123,7 +122,7 @@ class MyGame(arcade.Window):
         self.clear()
 
         # Draw all the sprites.
-        self.player_list.draw()
+        #self.player_list.draw()
         self.wall_list.draw()
         self.reward_list.draw()
         self.ray_list.draw()
@@ -149,11 +148,13 @@ class MyGame(arcade.Window):
         """Called whenever a key is pressed. """
 
         if key == arcade.key.UP:
-            self.player_sprite.player_movement([1, 0, 0])
+            self.player_sprite.player_movement([1, 0, 0, 0])
         elif key == arcade.key.LEFT:
-            self.player_sprite.player_movement([0, 1, 0])
+            self.player_sprite.player_movement([0, 1, 0, 0])
         elif key == arcade.key.RIGHT:
-            self.player_sprite.player_movement([0, 0, 1])
+            self.player_sprite.player_movement([0, 0, 1, 0])
+        elif key == arcade.key.DOWN:
+            self.player_sprite.player_movement([0, 0, 0, 1])
 
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
