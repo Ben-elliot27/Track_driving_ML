@@ -9,6 +9,7 @@ import numpy as np
 import math
 from Wall import Wall
 from Ray import Ray
+import tensorflow as tf
 
 
 class Player(arcade.Sprite):
@@ -84,8 +85,10 @@ class Player(arcade.Sprite):
         #Set up cost
         self.cost = 0
 
-        self.NN_inputs = np.array([self.current_vel/self.MAX_SPEED, self.angle/360, self.reward_distance/100, #ray distance normalising needs working on
-                                   np.array(self.ray_distance)/10]).flatten()
+        self.NN_inputs = np.array([self.current_vel/self.MAX_SPEED, self.angle/360,
+                                   self.reward_distance/100].append(np.array(self.ray_distance)/10))
+        #ray distance normalising needs working on
+
 
     def spawn_rays(self):
         for i in range(self.RAY_DISTANCE):
@@ -149,7 +152,7 @@ class Player(arcade.Sprite):
 
             self.update_rewards()
 
-            self.update_cost()
+            self.cost = self.update_cost()
         else:
             self.current_vel = 0
 
@@ -187,9 +190,12 @@ class Player(arcade.Sprite):
                 self.ray_distance[i] = 10
 
     def AI_movement(self):
-        self.NN_inputs = np.array([self.current_vel / self.MAX_SPEED, self.angle / 360, self.reward_distance / 100,
-                                   np.array(self.ray_distance) / 10]).flatten()
-        move = self.model.predict(self.NN_inputs)
+        list = [self.current_vel / self.MAX_SPEED, self.angle / 360, self.reward_distance / 1000]
+        for dist in self.ray_distance:
+            list.append(dist/10)
+        self.NN_inputs = list
+        pred = self.model.predict(np.array([self.NN_inputs]), verbose=0)
+        move = tf.nn.softmax(pred).numpy()[0]
 
         self.change_vel += move[0] * self.ACCELERATION_RATE
         self.change_vel -= move[3] * self.ACCELERATION_RATE
@@ -201,8 +207,8 @@ class Player(arcade.Sprite):
 
     def player_movement(self, direction):
         """ Handles player movement
-         input: [UP, LEFT, RIGHT]
-         ie [1, 0, 0] is UP"""
+         input: [UP, LEFT, RIGHT, DOWN]
+         ie [1, 0, 0, 0] is UP"""
 
         input = direction
         self.change_vel = 0
@@ -218,9 +224,6 @@ class Player(arcade.Sprite):
 
 
 
-        try:
-            if input[3] == 1
-
     def collision_with_wall(self, wall_list):
         # Generate a list of all walls that collided with the player.
         hit_list = arcade.check_for_collision_with_list(self,
@@ -233,7 +236,8 @@ class Player(arcade.Sprite):
 
     def death_sequence(self):
         #Function to control what happens when the player touches a wall and 'dies'
-        print("isDead")
+        #For now this just deatviates the player
+        self.isActive = False
 
     def update_rewards(self):
         # A funcion to update the reward count of the player
@@ -255,5 +259,7 @@ class Player(arcade.Sprite):
         if self.isDead:
             return -100000
         else:
-            return (self.reward_count * 1000) + (1/self.reward_distance * 10)
+            return (self.reward_count * 1000) + (1/self.reward_distance * 100)
+
+
 

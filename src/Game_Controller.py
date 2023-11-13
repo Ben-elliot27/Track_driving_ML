@@ -10,13 +10,13 @@ implemented 'dodgily' as a series of individual objects.
 
 """
 
-import math
+
 import arcade
-import numpy as np
+
 from Player import Player
 from Wall import Wall
 from Ray import Ray
-import AI_LEARNING_TF
+
 from Evolution_learning import Evolution_learning
 
 #Options: "Evolution"
@@ -84,7 +84,16 @@ class MyGame(arcade.Window):
         #self.spawn_player()
 
         if LEARNING_METHOD == "Evolution":
-            Evolution_learning(self)
+
+            inp = input("Load from previously saved model (y/n)? ")
+            if inp == 'y':
+                self.learning_alg = Evolution_learning(self)
+                self.learning_alg.on_startup_withmodel()
+            else:
+                self.learning_alg = Evolution_learning(self)
+                self.learning_alg.on_startup_init()
+
+
 
 
 
@@ -122,7 +131,7 @@ class MyGame(arcade.Window):
         self.clear()
 
         # Draw all the sprites.
-        #self.player_list.draw()
+        self.player_list.draw()
         self.wall_list.draw()
         self.reward_list.draw()
         self.ray_list.draw()
@@ -139,6 +148,7 @@ class MyGame(arcade.Window):
     def on_update(self, delta_time):
         """ Movement and game logic """
 
+
         self.player_list.update()
         for player in self.player_list:
             player.update_ray_hit_list(self.wall_list)
@@ -146,7 +156,7 @@ class MyGame(arcade.Window):
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
-
+        """
         if key == arcade.key.UP:
             self.player_sprite.player_movement([1, 0, 0, 0])
         elif key == arcade.key.LEFT:
@@ -155,6 +165,10 @@ class MyGame(arcade.Window):
             self.player_sprite.player_movement([0, 0, 1, 0])
         elif key == arcade.key.DOWN:
             self.player_sprite.player_movement([0, 0, 0, 1])
+            """
+        if key == arcade.key.S:
+            self.learning_alg.save = True
+
 
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
