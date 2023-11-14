@@ -5,6 +5,7 @@ finding which players performed best and using their 'genetics' (NN weights) to 
 from tensorflow import keras
 from threading import Timer
 import numpy as np
+import arcade
 NUM_BEST_PLAYERS = 2
 TOT_NUM_PLAYERS = NUM_BEST_PLAYERS + 20 #Best players also spawned
 
@@ -21,6 +22,8 @@ class Evolution_learning():
         self.game_window = game_window
         self.epochs = 0
         self.save = False
+        self.NUM_BEST_PLAYERS = NUM_BEST_PLAYERS
+        self.best_list = []
 
 
 
@@ -61,8 +64,6 @@ class Evolution_learning():
         for i in range(TOT_NUM_PLAYERS):
             self.game_window.spawn_player()
 
-        for i in range(NUM_BEST_PLAYERS):
-            self.game_window.spawn_best()
 
         for player in self.game_window.player_list:
 
@@ -108,13 +109,17 @@ class Evolution_learning():
         also deactivates the player so they don't carry on moving
         :return: best_players: list of player arcade objects
         """
+        costs = []
         for player in self.game_window.player_list:
             player.isActive = False
+            costs.append(player.cost)
 
-        self.game_window.player_list = sorted(self.game_window.player_list, key=lambda player: player.cost, reverse=True)
 
-        print(f"""Costs of players: {self.game_window.player_list[:].cost}
-        Players: {self.game_window.player_list[0:NUM_BEST_PLAYERS]}
+        self.best_list = sorted(self.game_window.player_list, key=lambda player: player.cost, reverse=True)[0:NUM_BEST_PLAYERS]
+
+
+        print(f"""Costs of players: {sorted(costs)[0:NUM_BEST_PLAYERS]}
+        Players: {self.best_list}
         Epoch: {self.epochs}
         """)
 
@@ -157,8 +162,7 @@ class Evolution_learning():
             print("Model saved")
             self.save = False
 
-    def draw_best_players(self):
-        self.game_window.player_list[0:NUM_BEST_PLAYERS].draw()
+
 
 
 

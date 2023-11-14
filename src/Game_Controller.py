@@ -35,7 +35,6 @@ class MyGame(arcade.Window):
 
         # Variables that will hold sprite lists
         self.player_list = None
-        self.best_player_list = None
         self.wall_list = None
 
         # Set up the player, wall, ray info
@@ -75,7 +74,6 @@ class MyGame(arcade.Window):
 
         # Sprite lists
         self.player_list = arcade.SpriteList()
-        self.best_player_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
         self.reward_list = arcade.SpriteList(use_spatial_hash=True)  # visible = False
         self.ray_list = arcade.SpriteList()  # visible = False
@@ -87,7 +85,8 @@ class MyGame(arcade.Window):
 
         if LEARNING_METHOD == "Evolution":
 
-            inp = input("Load from previously saved model (y/n)? ")
+            #inp = input("Load from previously saved model (y/n)? ")
+            inp = 'n'
             if inp == 'y':
                 self.learning_alg = Evolution_learning(self)
                 self.learning_alg.on_startup_withmodel()
@@ -111,13 +110,6 @@ class MyGame(arcade.Window):
         #Draw Player
         #self.player_list.draw()
 
-    def spawn_best(self):
-        self.player_sprite = Player(self.CAR_SPRITE_IMG,
-                                    self.SPRITE_SCALING)
-        self.player_sprite.center_x = self.player_spawn_pos[0]
-        self.player_sprite.center_y = self.player_spawn_pos[1]
-        self.best_player_list.append(self.player_sprite)
-        self.player_sprite.initialise()
 
     def spawn_walls(self):
         for i in range(self.WALL_COUNT):
@@ -145,7 +137,15 @@ class MyGame(arcade.Window):
         self.wall_list.draw()
         #self.reward_list.draw()
         #self.ray_list.draw()
-        self.learning_alg.draw_best_players()
+        try:
+            for player in self.learning_alg.best_players:
+                player.draw()
+        except:
+            print("No best_player list yet")
+            for player in self.player_list[0:2]:
+                player.draw()
+
+
 
         """
         # Display text
