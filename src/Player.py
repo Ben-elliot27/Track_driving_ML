@@ -1,7 +1,6 @@
 """
 The player class for the game
-TODO: Make player not interact with other players
-TODO: Make player able to move through NN
+
 """
 
 import arcade

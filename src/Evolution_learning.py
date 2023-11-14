@@ -5,13 +5,13 @@ finding which players performed best and using their 'genetics' (NN weights) to 
 from tensorflow import keras
 from threading import Timer
 import numpy as np
-NUM_BEST_PLAYERS = 3
-TOT_NUM_PLAYERS = 10
+NUM_BEST_PLAYERS = 2
+TOT_NUM_PLAYERS = NUM_BEST_PLAYERS + 20 #Best players also spawned
 
 RNG = np.random.default_rng(seed=82)
 SIGMA = 3
 
-EPOCH_TIME = 3 #seconds
+EPOCH_TIME = 10 #seconds
 
 RATE = 1/30
 RATE_RAND = 1/50
@@ -19,7 +19,6 @@ class Evolution_learning():
 
     def __init__(self, game_window):
         self.game_window = game_window
-        self.best_players = []
         self.epochs = 0
         self.save = False
 
@@ -31,6 +30,7 @@ class Evolution_learning():
         #Also start timer on how long it should run for
         for i in range(TOT_NUM_PLAYERS):
             self.game_window.spawn_player()
+
 
         for player in self.game_window.player_list:
 
@@ -60,6 +60,9 @@ class Evolution_learning():
         #Also start timer on how long it should run for
         for i in range(TOT_NUM_PLAYERS):
             self.game_window.spawn_player()
+
+        for i in range(NUM_BEST_PLAYERS):
+            self.game_window.spawn_best()
 
         for player in self.game_window.player_list:
 
@@ -105,22 +108,18 @@ class Evolution_learning():
         also deactivates the player so they don't carry on moving
         :return: best_players: list of player arcade objects
         """
-        player_costs = []
-        best_players = []
         for player in self.game_window.player_list:
             player.isActive = False
-            player_costs.append(player.cost)
-        player_costs_sorted = sorted(player_costs)[::-1]
-        for i in range(NUM_BEST_PLAYERS):
-            a = player_costs.index(player_costs_sorted[i])
-            best_players.append(self.game_window.player_list[a])
-        print(f"""Costs of players: {player_costs_sorted}
-        Players: {best_players}
+
+        self.game_window.player_list = sorted(self.game_window.player_list, key=lambda player: player.cost, reverse=True)
+
+        print(f"""Costs of players: {self.game_window.player_list[:].cost}
+        Players: {self.game_window.player_list[0:NUM_BEST_PLAYERS]}
         Epoch: {self.epochs}
         """)
 
         #Would be nice to save the NNs of the best performers or only show them
-        return best_players
+        return self.game_window.player_list[0:NUM_BEST_PLAYERS]
 
 
     def set_players_new_NN(self):
@@ -157,6 +156,9 @@ class Evolution_learning():
             self.best_players[0].model.save('../models_evolution/current_best.keras')
             print("Model saved")
             self.save = False
+
+    def draw_best_players(self):
+        self.game_window.player_list[0:NUM_BEST_PLAYERS].draw()
 
 
 

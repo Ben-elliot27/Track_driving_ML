@@ -35,6 +35,7 @@ class MyGame(arcade.Window):
 
         # Variables that will hold sprite lists
         self.player_list = None
+        self.best_player_list = None
         self.wall_list = None
 
         # Set up the player, wall, ray info
@@ -74,6 +75,7 @@ class MyGame(arcade.Window):
 
         # Sprite lists
         self.player_list = arcade.SpriteList()
+        self.best_player_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
         self.reward_list = arcade.SpriteList(use_spatial_hash=True)  # visible = False
         self.ray_list = arcade.SpriteList()  # visible = False
@@ -107,7 +109,15 @@ class MyGame(arcade.Window):
         self.player_sprite.initialise()
 
         #Draw Player
-        self.player_list.draw()
+        #self.player_list.draw()
+
+    def spawn_best(self):
+        self.player_sprite = Player(self.CAR_SPRITE_IMG,
+                                    self.SPRITE_SCALING)
+        self.player_sprite.center_x = self.player_spawn_pos[0]
+        self.player_sprite.center_y = self.player_spawn_pos[1]
+        self.best_player_list.append(self.player_sprite)
+        self.player_sprite.initialise()
 
     def spawn_walls(self):
         for i in range(self.WALL_COUNT):
@@ -131,10 +141,11 @@ class MyGame(arcade.Window):
         self.clear()
 
         # Draw all the sprites.
-        self.player_list.draw()
+        #self.player_list.draw()
         self.wall_list.draw()
-        self.reward_list.draw()
-        self.ray_list.draw()
+        #self.reward_list.draw()
+        #self.ray_list.draw()
+        self.learning_alg.draw_best_players()
 
         """
         # Display text
