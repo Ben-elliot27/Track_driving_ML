@@ -118,7 +118,7 @@ class Evolution_learning():
         self.best_list = sorted(self.game_window.player_list, key=lambda player: player.cost, reverse=True)[0:NUM_BEST_PLAYERS]
 
 
-        print(f"""Costs of players: {sorted(costs)[0:NUM_BEST_PLAYERS]}
+        print(f"""Costs of players: {sorted(costs, reverse=True)}
         Players: {self.best_list}
         Epoch: {self.epochs}
         """)
