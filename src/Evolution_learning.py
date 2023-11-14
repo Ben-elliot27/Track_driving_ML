@@ -98,6 +98,7 @@ class Evolution_learning():
         self.best_players = self.pick_best_players()
         self.save_best_player()
         self.set_players_new_NN()
+        self.reset_player()
 
         t = Timer(EPOCH_TIME * (self.epochs)**(RATE), self.on_cycle_end)
         t.start()
@@ -125,7 +126,7 @@ class Evolution_learning():
         """)
 
         #Would be nice to save the NNs of the best performers or only show them
-        return self.game_window.player_list[0:NUM_BEST_PLAYERS]
+        return self.best_list
 
 
     def set_players_new_NN(self):
@@ -139,9 +140,13 @@ class Evolution_learning():
 
             new_weights = []
             for weights in self.best_players[i % NUM_BEST_PLAYERS].model.get_weights():
-                new_weights.append(
-                    weights + (SIGMA/(self.epochs)**RATE_RAND) * RNG.standard_normal(size=weights.shape)
-                )
+                if i < NUM_BEST_PLAYERS:
+                    new_weights.append(weights)
+                else:
+                    new_weights.append(
+                        weights + (SIGMA/(self.epochs)**RATE_RAND) * RNG.standard_normal(size=weights.shape)
+                    )
+
             player.model.set_weights(new_weights)
 
             #move player back to start
@@ -151,6 +156,21 @@ class Evolution_learning():
 
         for player in self.game_window.player_list:
             player.isActive = True #re-active player
+
+    def reset_player(self):
+        for player in self.game_window.player_list:
+
+            #move player back to start
+            player.center_x = self.game_window.player_spawn_pos[0]
+            player.center_y = self.game_window.player_spawn_pos[1]
+            player.angle = 0
+
+            #reset reward positions
+            player.reward_list.clear()
+            player.spawn_rewards()
+
+        for player in self.game_window.player_list:
+            player.isActive = True  # re-active player
 
 
     def save_best_player(self):

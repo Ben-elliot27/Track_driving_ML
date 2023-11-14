@@ -26,6 +26,8 @@ LEARNING_METHOD = "Evolution" #Method by which the AI will be trained
 
 FRAME_RATE = 1/20 #20 fps
 
+UPDATE_FREQ = 3 #updates per called
+
 
 class MyGame(arcade.Window):
     """
@@ -49,6 +51,8 @@ class MyGame(arcade.Window):
         # Set the background color
         arcade.set_background_color(arcade.color.AMAZON)
 
+        self.update_freq_count = 0
+
         #image initialsiation
         self.CAR_SPRITE_IMG = "../images/Car_sprite.png"
         self.CIRCLE_SPRITE_IMG = '../images/Circle_sprite.png'
@@ -68,6 +72,8 @@ class MyGame(arcade.Window):
         self.WALL_ANGLES = [0, 90, 0, 90, 0, 90, 0, 90]
 
         self.player_spawn_pos = [50, 50]
+
+
 
 
 
@@ -142,6 +148,7 @@ class MyGame(arcade.Window):
         self.wall_list.draw()
         #self.reward_list.draw()
         #self.ray_list.draw()
+
         try:
             for player in self.learning_alg.best_players:
                 player.draw()
@@ -151,6 +158,8 @@ class MyGame(arcade.Window):
             print("No best_player list yet")
             for player in self.player_list[0:2]:
                 player.draw()
+
+        #self.player_list.draw() - draw everybody
 
 
 
@@ -168,11 +177,15 @@ class MyGame(arcade.Window):
         """ Movement and game logic """
 
         self.player_list.update()
-        if delta_time > 5 * FRAME_RATE:
+        if self.update_freq_count >= UPDATE_FREQ:
             for player in self.player_list:
                 player.update_ray_hit_list(self.wall_list)
                 player.collision_with_wall(self.wall_list)
                 player.AI_movement()
+                self.update_freq_count = 0
+        else:
+            self.update_freq_count += 1
+
 
 
 

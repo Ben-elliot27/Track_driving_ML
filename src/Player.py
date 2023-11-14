@@ -11,7 +11,7 @@ from Ray import Ray
 import tensorflow as tf
 
 
-import time
+
 
 
 class Player(arcade.Sprite):
@@ -126,7 +126,7 @@ class Player(arcade.Sprite):
         """
         :return:
         """
-        t0 = time.time()
+
         if self.isActive:
 
 
@@ -155,8 +155,7 @@ class Player(arcade.Sprite):
             self.cost = self.update_cost()
         else:
             self.current_vel = 0
-        t1 = time.time()
-        print("total player update time:", t1 - t0)
+
 
 
 
@@ -195,7 +194,7 @@ class Player(arcade.Sprite):
 
 
     def AI_movement(self):
-        t0 = time.time()
+
         list = [self.current_vel / self.MAX_SPEED, self.angle / 360, self.reward_distance / 1000]
         for dist in self.ray_distance:
             list.append(dist/10)
@@ -208,9 +207,9 @@ class Player(arcade.Sprite):
 
         self.angle += move[1] * self.TURNING_RATE
         self.angle -= move[2] * self.TURNING_RATE
-        t1 = time.time()
 
-        print("AI move time:", t1 - t0)
+
+
 
 
 
@@ -255,7 +254,6 @@ class Player(arcade.Sprite):
 
         #self.reward_sprite might not be defined in right scope
         #Gets distance to the closest reward
-        self.reward_distance = arcade.get_distance_between_sprites(self, self.reward_sprite)
 
         if arcade.check_for_collision(self, self.reward_sprite):
             self.reward_count += 1
@@ -264,6 +262,10 @@ class Player(arcade.Sprite):
             self.reward_sprite.center_y =self. REWARD_Y_POS[self.reward_index]
             self.reward_sprite.angle = self.REWARD_ANGLES[self.reward_index]
             self.reward_sprite.scaling = self.REWARD_SCALING[self.reward_index]
+
+        self.reward_distance = arcade.get_distance_between_sprites(self, self.reward_sprite)
+
+
     def update_cost(self):
         #function to update the cost (positive good)
         #For non evolution approach - add in ray data and distance to walls into cost data
