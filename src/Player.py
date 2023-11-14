@@ -11,6 +11,9 @@ from Ray import Ray
 import tensorflow as tf
 
 
+import time
+
+
 class Player(arcade.Sprite):
 
     def initialise(self):
@@ -119,12 +122,11 @@ class Player(arcade.Sprite):
         self.reward_sprite.angle = self.REWARD_ANGLES[0]
         self.reward_list.append(self.reward_sprite)
 
-        self.reward_list.draw()
-
     def update(self):
         """
         :return:
         """
+        t0 = time.time()
         if self.isActive:
             #Update speed
             self.AI_movement()
@@ -154,6 +156,9 @@ class Player(arcade.Sprite):
             self.cost = self.update_cost()
         else:
             self.current_vel = 0
+        t1 = time.time()
+        print("total player update time:", t1 - t0)
+
 
 
     def update_ray_positions(self):
@@ -188,12 +193,15 @@ class Player(arcade.Sprite):
             except IndexError:
                 self.ray_distance[i] = 10
 
+
+
     def AI_movement(self):
+        t0 = time.time()
         list = [self.current_vel / self.MAX_SPEED, self.angle / 360, self.reward_distance / 1000]
         for dist in self.ray_distance:
             list.append(dist/10)
         self.NN_inputs = list
-        pred = self.model.predict(np.array([self.NN_inputs]), verbose=0)
+        pred = self.model(np.array([self.NN_inputs]), training=False)
         move = tf.nn.softmax(pred).numpy()[0]
 
         self.change_vel += move[0] * self.ACCELERATION_RATE
@@ -201,6 +209,11 @@ class Player(arcade.Sprite):
 
         self.angle += move[1] * self.TURNING_RATE
         self.angle -= move[2] * self.TURNING_RATE
+        t1 = time.time()
+
+        print("AI move time:", t1 - t0)
+
+
 
 
 

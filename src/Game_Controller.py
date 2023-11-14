@@ -17,6 +17,8 @@ from Player import Player
 from Wall import Wall
 from Ray import Ray
 
+import time
+
 from Evolution_learning import Evolution_learning
 
 #Options: "Evolution"
@@ -85,8 +87,7 @@ class MyGame(arcade.Window):
 
         if LEARNING_METHOD == "Evolution":
 
-            #inp = input("Load from previously saved model (y/n)? ")
-            inp = 'n'
+            inp = input("Load from previously saved model (y/n)? ")
             if inp == 'y':
                 self.learning_alg = Evolution_learning(self)
                 self.learning_alg.on_startup_withmodel()
@@ -140,10 +141,13 @@ class MyGame(arcade.Window):
         try:
             for player in self.learning_alg.best_players:
                 player.draw()
+                player.ray_list.draw()
+                player.reward_list.draw()
         except:
             print("No best_player list yet")
             for player in self.player_list[0:2]:
                 player.draw()
+
 
 
 
@@ -159,11 +163,13 @@ class MyGame(arcade.Window):
     def on_update(self, delta_time):
         """ Movement and game logic """
 
-
+        t0 = time.time()
         self.player_list.update()
         for player in self.player_list:
             player.update_ray_hit_list(self.wall_list)
             player.collision_with_wall(self.wall_list)
+        t1 = time.time()
+        print("total update time:", t1 - t0)
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """

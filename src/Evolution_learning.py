@@ -1,6 +1,7 @@
 """
 A script that will handle learning via Evolution and natural selection by running the code for e certain time period,
 finding which players performed best and using their 'genetics' (NN weights) to train the next generation.
+https://medium.com/@evertongomede/neuroevolution-of-augmenting-topologies-neat-innovating-neural-network-architecture-evolution-bc5508527252
 """
 from tensorflow import keras
 from threading import Timer
