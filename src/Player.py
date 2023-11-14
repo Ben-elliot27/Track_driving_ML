@@ -128,8 +128,7 @@ class Player(arcade.Sprite):
         """
         t0 = time.time()
         if self.isActive:
-            #Update speed
-            self.AI_movement()
+
 
             if self.current_vel < self.MAX_SPEED:
                 self.current_vel += self.change_vel
@@ -201,7 +200,7 @@ class Player(arcade.Sprite):
         for dist in self.ray_distance:
             list.append(dist/10)
         self.NN_inputs = list
-        pred = self.model(np.array([self.NN_inputs]), training=False)
+        pred = self.model(np.array([self.NN_inputs]), training=False) #----
         move = tf.nn.softmax(pred).numpy()[0]
 
         self.change_vel += move[0] * self.ACCELERATION_RATE

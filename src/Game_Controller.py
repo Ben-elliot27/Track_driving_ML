@@ -17,12 +17,14 @@ from Player import Player
 from Wall import Wall
 from Ray import Ray
 
-import time
+
 
 from Evolution_learning import Evolution_learning
 
 #Options: "Evolution"
 LEARNING_METHOD = "Evolution" #Method by which the AI will be trained
+
+FRAME_RATE = 1/20 #20 fps
 
 
 class MyGame(arcade.Window):
@@ -73,6 +75,8 @@ class MyGame(arcade.Window):
 
     def setup(self):
         """ Set up the game and initialize the variables. """
+
+        self.set_update_rate(FRAME_RATE) #sets fps to FRAME_RATE
 
         # Sprite lists
         self.player_list = arcade.SpriteList()
@@ -163,13 +167,14 @@ class MyGame(arcade.Window):
     def on_update(self, delta_time):
         """ Movement and game logic """
 
-        t0 = time.time()
         self.player_list.update()
-        for player in self.player_list:
-            player.update_ray_hit_list(self.wall_list)
-            player.collision_with_wall(self.wall_list)
-        t1 = time.time()
-        print("total update time:", t1 - t0)
+        if delta_time > 5 * FRAME_RATE:
+            for player in self.player_list:
+                player.update_ray_hit_list(self.wall_list)
+                player.collision_with_wall(self.wall_list)
+                player.AI_movement()
+
+
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """

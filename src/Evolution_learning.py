@@ -8,7 +8,7 @@ from threading import Timer
 import numpy as np
 import arcade
 NUM_BEST_PLAYERS = 2
-TOT_NUM_PLAYERS = NUM_BEST_PLAYERS + 20 #Best players also spawned
+TOT_NUM_PLAYERS = NUM_BEST_PLAYERS + 20  #Best players also spawned
 
 RNG = np.random.default_rng(seed=82)
 SIGMA = 3
