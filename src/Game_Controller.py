@@ -1,13 +1,8 @@
 """
-Edited version of the Game script st the variables and methods are attached to the player rather than the screen.
-
-Script to run a python arcade driving game with visible 'ray-casts' and checkpoints for implementing a machine learning
-model to train on.
+Main game class - handles running of arcade and window as well as setting up sprite_lists
 
 Because it uses arcade, a simple game library, it doesn't have many features such as proper ray-casts, so they are
 implemented 'dodgily' as a series of individual objects.
-
-
 """
 
 import arcade
@@ -21,7 +16,7 @@ LEARNING_METHOD = "Evolution"  # Method by which the AI will be trained
 
 FRAME_RATE = 1 / 20  # 20 fps
 
-UPDATE_FREQ = 3  # updates per called
+UPDATE_FREQ = 3  # Frames per NN ran to get new movement
 
 
 class MyGame(arcade.Window):
@@ -35,33 +30,32 @@ class MyGame(arcade.Window):
         super().__init__(width, height, title)
 
         # Variables that will hold sprite lists
-        self.player_list = None
-        self.wall_list = None
+        self.player_list = arcade.SpriteList()
+        self.wall_list = arcade.SpriteList()
 
         # Set up the player, wall, ray info
         self.player_sprite = None
         self.wall_sprite = None
-        self.ray_sprite = None
 
         # Set the background color
         arcade.set_background_color(arcade.color.AMAZON)
 
-        self.update_freq_count = 0
+        self.update_freq_count = 0  # Counter
 
         # image initialization
         self.CAR_SPRITE_IMG = "../images/Car_sprite.png"
         self.CIRCLE_SPRITE_IMG = '../images/Circle_sprite.png'
         self.WALL_SPRITE_IMG = '../images/wall_sprite.png'
-        self.SPRITE_SCALING = 0.05
+        self.PLAYER_SCALING = 0.05
 
         # Initials for walls
         self.WALL_COUNT = 8
         self.WALL_SCALING = [5.7, 4.1, 5.6, 4.1,
                              4.2, 2.9, 4.2, 2.9]
-        self.X_POS = [490, 995, 490, 10,
-                      490, 995 - 120, 485, 10 + 120]
-        self.Y_POS = [10, 365, 730, 365,
-                      10 + 120, 365, 740 - 120, 365]
+        self.WALL_X_POS = [490, 995, 490, 10,
+                           490, 995 - 120, 485, 10 + 120]
+        self.WALL_Y_POS = [10, 365, 730, 365,
+                           10 + 120, 365, 740 - 120, 365]
         self.WALL_ANGLES = [0, 90, 0, 90, 0, 90, 0, 90]
 
         self.player_spawn_pos = [50, 50]
@@ -71,16 +65,11 @@ class MyGame(arcade.Window):
 
         self.set_update_rate(FRAME_RATE)  # sets fps to FRAME_RATE
 
-        # Sprite lists
+        # Sprite lists setup
         self.player_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
-        self.reward_list = arcade.SpriteList(use_spatial_hash=True)  # visible = False
-        self.ray_list = arcade.SpriteList()  # visible = False
 
-        # Spawn and draw all the sprites.
-        # Spawn objects
         self.spawn_walls()
-        # self.spawn_player()
 
         if LEARNING_METHOD == "Evolution":
 
@@ -93,24 +82,42 @@ class MyGame(arcade.Window):
                 self.learning_alg.on_startup_init()
 
     def spawn_player(self):
-        # Set up the player
+        """
+        Spawns a player and adds it to the player_list attached to this object
+        Does not draw player
+
+        REQUIRES attributes:
+        CAR_SPRITE_IMG: image file directory link
+        SPRITE_SCALING: float
+        PLAYER_SPAWN_POS: [x: float, y: float]
+        :return:
+        """
         self.player_sprite = Player(self.CAR_SPRITE_IMG,
-                                    self.SPRITE_SCALING)
+                                    self.PLAYER_SCALING)
         self.player_sprite.center_x = self.player_spawn_pos[0]
         self.player_sprite.center_y = self.player_spawn_pos[1]
         self.player_list.append(self.player_sprite)
         self.player_sprite.initialise()
 
-        # Draw Player
-        # self.player_list.draw()
-
     def spawn_walls(self):
+        """
+        Spawns all walls and adds them to the wall_list attached to this object
+        Does draw walls
+
+        REQUIRES attributes:
+        WALL_SPRITE_IMG: image file directory link :str
+        WALL_COUNT: :int
+        WALL_X_POS: [:floats]
+        WALL_Y_POS: [:floats]
+        WALL_ANGLES: [:floats]
+        :return:
+        """
         for i in range(self.WALL_COUNT):
             # Set up the wall
             self.wall_sprite = Wall(self.WALL_SPRITE_IMG,
                                     self.WALL_SCALING[i])
-            self.wall_sprite.center_x = self.X_POS[i]
-            self.wall_sprite.center_y = self.Y_POS[i]
+            self.wall_sprite.center_x = self.WALL_X_POS[i]
+            self.wall_sprite.center_y = self.WALL_Y_POS[i]
             self.wall_sprite.angle = self.WALL_ANGLES[i]
             self.wall_list.append(self.wall_sprite)
 
@@ -125,12 +132,9 @@ class MyGame(arcade.Window):
         # This command has to happen before start drawing
         self.clear()
 
-        # Draw all the sprites.
-        # self.player_list.draw()
-        self.wall_list.draw()
-        # self.reward_list.draw()
-        # self.ray_list.draw()
+        self.wall_list.draw()  # Draw the walls
 
+        # Draw the best players if there are any yet
         try:
             for player in self.learning_alg.best_players:
                 player.draw()
@@ -141,21 +145,16 @@ class MyGame(arcade.Window):
             for player in self.player_list[0:2]:
                 player.draw()
 
-        # self.player_list.draw() - draw everybody
-
-        """
-        # Display text
-        for player_sprite in self.player_list:
-            arcade.draw_text(f"Velocity: {player_sprite.current_vel:6.3f}", 10, 50, arcade.color.BLACK)
-            arcade.draw_text(f"Angle: {player_sprite.angle % 360:6.3f}", 10, 70, arcade.color.BLACK)
-            arcade.draw_text(f"xPOS: {player_sprite.center_x:6.3f}", 10, 90, arcade.color.BLACK)
-            arcade.draw_text(f"yPOS: {player_sprite.center_y:6.3f}", 10, 110, arcade.color.BLACK)
-            """
-
     def on_update(self, delta_time):
-        """ Movement and game logic """
+        """
+        Movement and game logic, called every FRAME_RATE s
+        :param delta_time: time since function last called
+        :return:
+        """
 
-        self.player_list.update()
+        self.player_list.update()  # Updates player movement
+
+        # Updates player movement via NN every UDPATE_FREQ frames
         if self.update_freq_count >= UPDATE_FREQ:
             for player in self.player_list:
                 player.update_ray_hit_list(self.wall_list)
@@ -167,24 +166,10 @@ class MyGame(arcade.Window):
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
-        """
-        if key == arcade.key.UP:
-            self.player_sprite.player_movement([1, 0, 0, 0])
-        elif key == arcade.key.LEFT:
-            self.player_sprite.player_movement([0, 1, 0, 0])
-        elif key == arcade.key.RIGHT:
-            self.player_sprite.player_movement([0, 0, 1, 0])
-        elif key == arcade.key.DOWN:
-            self.player_sprite.player_movement([0, 0, 0, 1])
-            """
+
+        # Save the current model
         if key == arcade.key.S:
             self.learning_alg.save = True
-
-    def on_key_release(self, key, modifiers):
-        """Called when the user releases a key. """
-
-        if key == arcade.key.UP or key == arcade.key.LEFT or key == arcade.key.RIGHT:
-            self.player_sprite.player_movement([0, 0, 0])
 
 
 def main():
