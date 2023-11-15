@@ -1,25 +1,42 @@
 """
-A script that will handle learning via Evolution and natural selection by running the code for e certain time period,
+A script that will handle learning via Evolution and natural selection by running the code for a certain time period,
 finding which players performed best and using their 'genetics' (NN weights) to train the next generation.
+
+Uses a simple algorithm where the best players' NNs are given some random noise each cycle/epoch rather than doing a
+NEAT algorithm and combining genes from good parents which would accelerate learning.
+
+The random noise initially is given by:
+SIGMA * normal(mu=0, sigma=0.5) // a normal distribution centred around 0
+However this does change as the number of cycles increases as:
+(SIGMA/(number of cycles)**RATE_RAND)
+
+The length of each cycle also changes with the number of cycles as:
+EPOCH_TIME * (number of cycles)**(RATE)
+
+
+FUTURE ALG
 https://medium.com/@evertongomede/neuroevolution-of-augmenting-topologies-neat-innovating-neural-network-architecture-evolution-bc5508527252
 TODO FORMATIING
 TODO check reseeting of rewards worked
 """
 
-from tensorflow import keras
 from threading import Timer
-import numpy as np
-import arcade
-NUM_BEST_PLAYERS = 2
-TOT_NUM_PLAYERS = NUM_BEST_PLAYERS + 20  #Best players also spawned
 
-RNG = np.random.default_rng(seed=82)
+import numpy as np
+from tensorflow import keras
+
+NUM_BEST_PLAYERS = 2
+TOT_NUM_PLAYERS = NUM_BEST_PLAYERS + 20  # Best players also spawned
+
+RNG = np.random.default_rng(seed=82) # Uses numpy random generator
 SIGMA = 3
 
-EPOCH_TIME = 10 #seconds
+EPOCH_TIME = 10  # seconds // this is not currently based on the number of updates that happens, but could be in future
 
-RATE = 1/30
-RATE_RAND = 1/50
+RATE = 1 / 30  # rate of increase of time simulated for
+RATE_RAND = 1 / 50  # rate of decrease of random noise
+
+
 class Evolution_learning():
 
     def __init__(self, game_window):
@@ -27,20 +44,19 @@ class Evolution_learning():
         self.epochs = 0
         self.save = False
         self.NUM_BEST_PLAYERS = NUM_BEST_PLAYERS
-        self.best_list = []
-
-
-
 
     def on_startup_init(self):
-        #set up the players NNs and their weights
-        #Also start timer on how long it should run for
+        """
+        FOR WHEN THE SAVED NN IS NOT USED
+        Set up the players, their NNs and their weights
+        Also start timer on how long it should run for (separate thread)
+        :return:
+        """
         for i in range(TOT_NUM_PLAYERS):
             self.game_window.spawn_player()
 
-
         for player in self.game_window.player_list:
-
+            # Create the NN
             inputs = keras.Input(shape=(11,))
             dense = keras.layers.Dense(50, activation='relu')(inputs)
             outputs = keras.layers.Dense(4)(dense)
@@ -49,10 +65,10 @@ class Evolution_learning():
 
             new_weights = []
 
-            #Give each NN a random deviation at the start
+            # Give each NN a random deviation at the start
             for weights in model.get_weights():
                 new_weights.append(
-                    weights + SIGMA*RNG.standard_normal(size=weights.shape)
+                    weights + SIGMA * RNG.standard_normal(size=weights.shape)
                 )
             model.set_weights(new_weights)
             player.model = model
@@ -63,11 +79,15 @@ class Evolution_learning():
         t.start()
 
     def on_startup_withmodel(self):
-        #set up the players NNs aand weights from previously saved NN
-        #Also start timer on how long it should run for
+        """
+        FOR WHEN THE SAVED NN IS USED
+        Set up the players, their NNs (based on saved model) and their weights
+        Also start timer on how long it should run for (separate thread)
+        :return:
+        """
+
         for i in range(TOT_NUM_PLAYERS):
             self.game_window.spawn_player()
-
 
         for player in self.game_window.player_list:
 
@@ -75,10 +95,10 @@ class Evolution_learning():
 
             new_weights = []
 
-            #Give each NN a random deviation at the start
+            # Give each NN a random deviation at the start
             for weights in model.get_weights():
                 new_weights.append(
-                    weights + SIGMA*RNG.standard_normal(size=weights.shape)
+                    weights + SIGMA * RNG.standard_normal(size=weights.shape)
                 )
             model.set_weights(new_weights)
             player.model = model
@@ -88,30 +108,25 @@ class Evolution_learning():
         t = Timer(EPOCH_TIME, self.on_cycle_end)
         t.start()
 
-
-
-
-
     def on_cycle_end(self):
-        #When current cycle ends
-
-        #self.game_window.clear() #clear the screen (now just moving players rather than respawning)
-        #maybe want to pause game so players don't carry on moving
+        """
+        Called when current cycle/epoch ends
+        Handles the selection of best players and giving the players their new NNs
+        :return:
+        """
         self.epochs += 1
         self.best_players = self.pick_best_players()
         self.save_best_player()
         self.set_players_new_NN()
         self.reset_player()
 
-        t = Timer(EPOCH_TIME * (self.epochs)**(RATE), self.on_cycle_end)
+        t = Timer(EPOCH_TIME * (self.epochs ** RATE), self.on_cycle_end)
         t.start()
-
-
 
     def pick_best_players(self):
         """
-        picks the highest 3 scoring players from the last run
-        also deactivates the player so they don't carry on moving
+        Picks the highest 3 scoring players from the last run and print their informaton
+        Also deactivates all players, so they don't carry on moving
         :return: best_players: list of player arcade objects
         """
         costs = []
@@ -119,18 +134,15 @@ class Evolution_learning():
             player.isActive = False
             costs.append(player.cost)
 
-
-        self.best_list = sorted(self.game_window.player_list, key=lambda player: player.cost, reverse=True)[0:NUM_BEST_PLAYERS]
-
+        best_list = sorted(self.game_window.player_list, key=lambda player: player.cost, reverse=True)[
+                         0:NUM_BEST_PLAYERS]
 
         print(f"""Costs of players: {sorted(costs, reverse=True)}
-        Players: {self.best_list}
+        Players: {best_list}
         Epoch: {self.epochs}
         """)
 
-        #Would be nice to save the NNs of the best performers or only show them
-        return self.best_list
-
+        return best_list
 
     def set_players_new_NN(self):
         """
@@ -147,51 +159,35 @@ class Evolution_learning():
                     new_weights.append(weights)
                 else:
                     new_weights.append(
-                        weights + (SIGMA/(self.epochs)**RATE_RAND) * RNG.standard_normal(size=weights.shape)
+                        weights + (SIGMA / (self.epochs ** RATE_RAND)) * RNG.standard_normal(size=weights.shape)
                     )
 
             player.model.set_weights(new_weights)
 
-            #move player back to start
-            player.center_x = self.game_window.player_spawn_pos[0]
-            player.center_y = self.game_window.player_spawn_pos[1]
-            player.angle = 0
-
-        for player in self.game_window.player_list:
-            player.isActive = True #re-active player
-
     def reset_player(self):
+        """
+        Resets the players to their original just spawned state
+        :return:
+        """
         for player in self.game_window.player_list:
-
-            #move player back to start
+            # move player back to start
             player.center_x = self.game_window.player_spawn_pos[0]
             player.center_y = self.game_window.player_spawn_pos[1]
             player.angle = 0
 
-            #reset reward positions
+            # reset reward positions
             player.reward_list.clear()
             player.spawn_rewards()
 
         for player in self.game_window.player_list:
             player.isActive = True  # re-active player
 
-
     def save_best_player(self):
         """
-        function to save the model of the best player from the current run
+        Saves the model of the best player from the current run
         :return:
         """
         if self.save:
             self.best_players[0].model.save('../models_evolution/current_best.keras')
             print("Model saved")
             self.save = False
-
-
-
-
-
-
-
-
-
-
