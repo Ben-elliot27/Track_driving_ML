@@ -1,32 +1,27 @@
 """
 Edited version of the Game script st the variables and methods are attached to the player rather than the screen.
 
-Script to run a python arcade driving game with visible 'raycasts' and checkpoints for implementing a machine learning
+Script to run a python arcade driving game with visible 'ray-casts' and checkpoints for implementing a machine learning
 model to train on.
 
-Because it uses arcade, a simple game library, it doesn't have many features such as proper raycasts so they are
+Because it uses arcade, a simple game library, it doesn't have many features such as proper ray-casts, so they are
 implemented 'dodgily' as a series of individual objects.
 
 
 """
 
-
 import arcade
 
+from Evolution_learning import Evolution_learning
 from Player import Player
 from Wall import Wall
-from Ray import Ray
 
+# Options: "Evolution"
+LEARNING_METHOD = "Evolution"  # Method by which the AI will be trained
 
+FRAME_RATE = 1 / 20  # 20 fps
 
-from Evolution_learning import Evolution_learning
-
-#Options: "Evolution"
-LEARNING_METHOD = "Evolution" #Method by which the AI will be trained
-
-FRAME_RATE = 1/20 #20 fps
-
-UPDATE_FREQ = 3 #updates per called
+UPDATE_FREQ = 3  # updates per called
 
 
 class MyGame(arcade.Window):
@@ -53,36 +48,28 @@ class MyGame(arcade.Window):
 
         self.update_freq_count = 0
 
-        #image initialsiation
+        # image initialization
         self.CAR_SPRITE_IMG = "../images/Car_sprite.png"
         self.CIRCLE_SPRITE_IMG = '../images/Circle_sprite.png'
         self.WALL_SPRITE_IMG = '../images/wall_sprite.png'
         self.SPRITE_SCALING = 0.05
 
-
-
         # Initials for walls
         self.WALL_COUNT = 8
         self.WALL_SCALING = [5.7, 4.1, 5.6, 4.1,
-                        4.2, 2.9, 4.2, 2.9]
+                             4.2, 2.9, 4.2, 2.9]
         self.X_POS = [490, 995, 490, 10,
-                 490, 995 - 120, 485, 10 + 120]
+                      490, 995 - 120, 485, 10 + 120]
         self.Y_POS = [10, 365, 730, 365,
-                 10 + 120, 365, 740 - 120, 365]
+                      10 + 120, 365, 740 - 120, 365]
         self.WALL_ANGLES = [0, 90, 0, 90, 0, 90, 0, 90]
 
         self.player_spawn_pos = [50, 50]
 
-
-
-
-
-
-
     def setup(self):
         """ Set up the game and initialize the variables. """
 
-        self.set_update_rate(FRAME_RATE) #sets fps to FRAME_RATE
+        self.set_update_rate(FRAME_RATE)  # sets fps to FRAME_RATE
 
         # Sprite lists
         self.player_list = arcade.SpriteList()
@@ -91,9 +78,9 @@ class MyGame(arcade.Window):
         self.ray_list = arcade.SpriteList()  # visible = False
 
         # Spawn and draw all the sprites.
-        #Spawn objects
+        # Spawn objects
         self.spawn_walls()
-        #self.spawn_player()
+        # self.spawn_player()
 
         if LEARNING_METHOD == "Evolution":
 
@@ -105,10 +92,6 @@ class MyGame(arcade.Window):
                 self.learning_alg = Evolution_learning(self)
                 self.learning_alg.on_startup_init()
 
-
-
-
-
     def spawn_player(self):
         # Set up the player
         self.player_sprite = Player(self.CAR_SPRITE_IMG,
@@ -118,9 +101,8 @@ class MyGame(arcade.Window):
         self.player_list.append(self.player_sprite)
         self.player_sprite.initialise()
 
-        #Draw Player
-        #self.player_list.draw()
-
+        # Draw Player
+        # self.player_list.draw()
 
     def spawn_walls(self):
         for i in range(self.WALL_COUNT):
@@ -132,7 +114,7 @@ class MyGame(arcade.Window):
             self.wall_sprite.angle = self.WALL_ANGLES[i]
             self.wall_list.append(self.wall_sprite)
 
-        #Draw walls
+        # Draw walls
         self.wall_list.draw()
 
     def on_draw(self):
@@ -144,10 +126,10 @@ class MyGame(arcade.Window):
         self.clear()
 
         # Draw all the sprites.
-        #self.player_list.draw()
+        # self.player_list.draw()
         self.wall_list.draw()
-        #self.reward_list.draw()
-        #self.ray_list.draw()
+        # self.reward_list.draw()
+        # self.ray_list.draw()
 
         try:
             for player in self.learning_alg.best_players:
@@ -159,10 +141,7 @@ class MyGame(arcade.Window):
             for player in self.player_list[0:2]:
                 player.draw()
 
-        #self.player_list.draw() - draw everybody
-
-
-
+        # self.player_list.draw() - draw everybody
 
         """
         # Display text
@@ -186,9 +165,6 @@ class MyGame(arcade.Window):
         else:
             self.update_freq_count += 1
 
-
-
-
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
         """
@@ -204,17 +180,11 @@ class MyGame(arcade.Window):
         if key == arcade.key.S:
             self.learning_alg.save = True
 
-
     def on_key_release(self, key, modifiers):
         """Called when the user releases a key. """
 
         if key == arcade.key.UP or key == arcade.key.LEFT or key == arcade.key.RIGHT:
             self.player_sprite.player_movement([0, 0, 0])
-
-
-
-
-
 
 
 def main():
@@ -227,10 +197,7 @@ def main():
     arcade.run()
 
 
-
 # --------------------------------------------------------------------------------------
 
 
 main()
-
-
