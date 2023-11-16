@@ -1,5 +1,5 @@
 """
-A script that will handle learning via Evolution and natural selection by running the code for a certain time period,
+A script that handles learning via Evolution and natural selection by running the code for a certain time period,
 finding which players performed best and using their 'genetics' (NN weights) to train the next generation.
 
 Uses a simple algorithm where the best players' NNs are given some random noise each cycle/epoch rather than doing a
@@ -16,7 +16,8 @@ EPOCH_TIME * (number of cycles)**(RATE)
 
 FUTURE ALG
 https://medium.com/@evertongomede/neuroevolution-of-augmenting-topologies-neat-innovating-neural-network-architecture-evolution-bc5508527252
-TODO FORMATIING
+TODO Make a better track
+TODO make a better way of saving the best player & don't a;ways overwrite
 TODO check reseeting of rewards worked
 """
 

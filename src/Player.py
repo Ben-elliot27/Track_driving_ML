@@ -11,12 +11,17 @@ import tensorflow as tf
 from Ray import Ray
 from Wall import Wall
 
-NUM_REWARDS = 8  # total number of rewards
+
 
 
 class Player(arcade.Sprite):
 
     def initialise(self):
+        """
+        Initialises the player (needs to be called when first spawned
+        Sets contants used by player as well
+        :return:
+        """
         # Speed limit
         self.MAX_SPEED = 3.0
 
@@ -52,6 +57,8 @@ class Player(arcade.Sprite):
         self.REWARD_Y_POS = [50, 50, 220, 400,
                              680, 680, 530, 250]
         self.REWARD_ANGLES = [90, 90, 0, 0, 90, 90, 0, 0]
+
+        self.NUM_REWARDS = len(self.REWARD_ANGLES)  # total number of rewards (=8)
 
         self.current_vel = 0
         self.isDead = False
@@ -240,7 +247,7 @@ class Player(arcade.Sprite):
 
         if arcade.check_for_collision(self, self.reward_sprite):
             self.reward_count += 1
-            self.reward_index = (self.reward_index + 1) % NUM_REWARDS
+            self.reward_index = (self.reward_index + 1) % self.NUM_REWARDS
             self.reward_sprite.center_x = self.REWARD_X_POS[self.reward_index]
             self.reward_sprite.center_y = self.REWARD_Y_POS[self.reward_index]
             self.reward_sprite.angle = self.REWARD_ANGLES[self.reward_index]
