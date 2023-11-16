@@ -4,25 +4,19 @@ The player class for the game
 """
 
 import arcade
-import numpy as np
 import math
-from Wall import Wall
-from Ray import Ray
+import numpy as np
 import tensorflow as tf
 
+from Ray import Ray
+from Wall import Wall
 
-
+NUM_REWARDS = 8  # total number of rewards
 
 
 class Player(arcade.Sprite):
 
     def initialise(self):
-        self.current_vel = 0
-        self.isDead = False
-        self.change_vel = 0
-
-        self.isActive = False
-
         # Speed limit
         self.MAX_SPEED = 3.0
 
@@ -43,7 +37,7 @@ class Player(arcade.Sprite):
         self.RAY_GAP = 10
         self.RAY_SCALING = 0.01
 
-        #image initialsiation
+        # image initialsiation
         self.CAR_SPRITE_IMG = "../images/Car_sprite.png"
         self.CIRCLE_SPRITE_IMG = '../images/Circle_sprite.png'
         self.WALL_SPRITE_IMG = '../images/wall_sprite.png'
@@ -52,12 +46,18 @@ class Player(arcade.Sprite):
         # Initials for rewards
         self.REWARD_COUNT = 8
         self.REWARD_SCALING = [.8, .8, .8, .8,
-                          .8, .8, .8, .8]
+                               .8, .8, .8, .8]
         self.REWARD_X_POS = [332, 683, 950, 950,
-                        770, 350, 64, 64]
+                             770, 350, 64, 64]
         self.REWARD_Y_POS = [50, 50, 220, 400,
-                        680, 680, 530, 250]
+                             680, 680, 530, 250]
         self.REWARD_ANGLES = [90, 90, 0, 0, 90, 90, 0, 0]
+
+        self.current_vel = 0
+        self.isDead = False
+        self.change_vel = 0
+
+        self.isActive = False
 
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
         self.reward_list = arcade.SpriteList(use_spatial_hash=True)  # visible = False
@@ -70,11 +70,11 @@ class Player(arcade.Sprite):
         self.ray_list = arcade.SpriteList(use_spatial_hash=True)
 
         self.ray_hit_list = np.array([0 for a in range(self.RAY_COUNT * self.RAY_DISTANCE)])
-        self.ray_distance = np.array([10 for a in range(self.RAY_COUNT)]) #USED IN NN
+        self.ray_distance = np.array([10 for a in range(self.RAY_COUNT)])  # USED IN NN
 
-        self.spawn_rewards() #Set up the first reward
+        self.spawn_rewards()  # Set up the first reward
 
-        self.reward_distance = 10000 #USED IN NN
+        self.reward_distance = 10000
 
         self.reward_count = 0
 
@@ -82,15 +82,14 @@ class Player(arcade.Sprite):
 
         self.spawn_rays()
 
-        self.model = None #Attribute to set the tf model to
+        self.model = None  # Attribute to set the tf model to
 
-        #Set up cost
+        # Set up cost
         self.cost = 0
 
-        self.NN_inputs = np.array([self.current_vel/self.MAX_SPEED, self.angle/360,
-                                   self.reward_distance/100].append(np.array(self.ray_distance)/10))
-        #ray distance normalising needs working on
-
+        self.NN_inputs = np.array([self.current_vel / self.MAX_SPEED, self.angle / 360,
+                                   self.reward_distance / 100].append(np.array(self.ray_distance) / 10))
+        # ray distance normalising needs working on
 
     def spawn_rays(self):
         for i in range(self.RAY_DISTANCE):
@@ -129,7 +128,6 @@ class Player(arcade.Sprite):
 
         if self.isActive:
 
-
             if self.current_vel < self.MAX_SPEED:
                 self.current_vel += self.change_vel
             elif self.current_vel >= self.MAX_SPEED:
@@ -155,9 +153,6 @@ class Player(arcade.Sprite):
             self.cost = self.update_cost()
         else:
             self.current_vel = 0
-
-
-
 
     def update_ray_positions(self):
         # Update Ray position to move with player
@@ -191,15 +186,13 @@ class Player(arcade.Sprite):
             except IndexError:
                 self.ray_distance[i] = 10
 
-
-
     def AI_movement(self):
 
         list = [self.current_vel / self.MAX_SPEED, self.angle / 360, self.reward_distance / 1000]
         for dist in self.ray_distance:
-            list.append(dist/10)
+            list.append(dist / 10)
         self.NN_inputs = list
-        pred = self.model(np.array([self.NN_inputs]), training=False) #----
+        pred = self.model(np.array([self.NN_inputs]), training=False)  # ----
         move = tf.nn.softmax(pred).numpy()[0]
 
         self.change_vel += move[0] * self.ACCELERATION_RATE
@@ -207,13 +200,6 @@ class Player(arcade.Sprite):
 
         self.angle += move[1] * self.TURNING_RATE
         self.angle -= move[2] * self.TURNING_RATE
-
-
-
-
-
-
-
 
     def player_movement(self, direction):
         """ Handles player movement
@@ -231,9 +217,6 @@ class Player(arcade.Sprite):
         elif input[2] == 1 and input[1] != 1:
             self.angle += -self.TURNING_RATE
 
-
-
-
     def collision_with_wall(self, wall_list):
         # Generate a list of all walls that collided with the player.
         hit_list = arcade.check_for_collision_with_list(self,
@@ -245,34 +228,38 @@ class Player(arcade.Sprite):
             self.isDead = False
 
     def death_sequence(self):
-        #Function to control what happens when the player touches a wall and 'dies'
-        #For now this just deatviates the player
+        # Function to control what happens when the player touches a wall and 'dies'
+        # For now this just deatviates the player
         self.isActive = False
 
     def update_rewards(self):
         # A funcion to update the reward count of the player
 
-        #self.reward_sprite might not be defined in right scope
-        #Gets distance to the closest reward
+        # self.reward_sprite might not be defined in right scope
+        # Gets distance to the closest reward
 
         if arcade.check_for_collision(self, self.reward_sprite):
             self.reward_count += 1
-            self.reward_index = (self.reward_index + 1) % 8
+            self.reward_index = (self.reward_index + 1) % NUM_REWARDS
             self.reward_sprite.center_x = self.REWARD_X_POS[self.reward_index]
-            self.reward_sprite.center_y =self. REWARD_Y_POS[self.reward_index]
+            self.reward_sprite.center_y = self.REWARD_Y_POS[self.reward_index]
             self.reward_sprite.angle = self.REWARD_ANGLES[self.reward_index]
             self.reward_sprite.scaling = self.REWARD_SCALING[self.reward_index]
 
         self.reward_distance = arcade.get_distance_between_sprites(self, self.reward_sprite)
 
-
     def update_cost(self):
-        #function to update the cost (positive good)
-        #For non evolution approach - add in ray data and distance to walls into cost data
+        # function to update the cost (positive good)
+        # For non evolution approach - add in ray data and distance to walls into cost data
         if self.isDead:
             return -100000
         else:
-            return (self.reward_count * 1000) + (1/self.reward_distance * 100)
+            return (self.reward_count * 1000) + (1 / self.reward_distance * 100)
 
-
-
+    def reset_reward_list(self):
+        # Set up the rewards
+        self.reward_index = 0
+        self.reward_count = 0
+        self.reward_sprite.center_x = self.REWARD_X_POS[0]
+        self.reward_sprite.center_y = self.REWARD_Y_POS[0]
+        self.reward_sprite.angle = self.REWARD_ANGLES[0]

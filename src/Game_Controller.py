@@ -141,7 +141,7 @@ class MyGame(arcade.Window):
                 player.ray_list.draw()
                 player.reward_list.draw()
         except:
-            print("No best_player list yet")
+            # No best_player list yet
             for player in self.player_list[0:2]:
                 player.draw()
 

@@ -25,7 +25,7 @@ from threading import Timer
 import numpy as np
 from tensorflow import keras
 
-NUM_BEST_PLAYERS = 2
+NUM_BEST_PLAYERS = 4
 TOT_NUM_PLAYERS = NUM_BEST_PLAYERS + 20  # Best players also spawned
 
 RNG = np.random.default_rng(seed=82) # Uses numpy random generator
@@ -119,6 +119,7 @@ class Evolution_learning():
         self.save_best_player()
         self.set_players_new_NN()
         self.reset_player()
+        print("5")
 
         t = Timer(EPOCH_TIME * (self.epochs ** RATE), self.on_cycle_end)
         t.start()
@@ -174,10 +175,8 @@ class Evolution_learning():
             player.center_x = self.game_window.player_spawn_pos[0]
             player.center_y = self.game_window.player_spawn_pos[1]
             player.angle = 0
-
             # reset reward positions
-            player.reward_list.clear()
-            player.spawn_rewards()
+            player.reset_reward_list() #broke
 
         for player in self.game_window.player_list:
             player.isActive = True  # re-active player
