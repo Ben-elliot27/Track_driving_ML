@@ -10,6 +10,7 @@ import arcade
 from Evolution_learning import Evolution_learning
 from Player import Player
 from Wall import Wall
+from Draw_track import Draw_track
 
 # Options: "Evolution"
 LEARNING_METHOD = "Evolution"  # Method by which the AI will be trained
@@ -19,15 +20,15 @@ FRAME_RATE = 1 / 20  # 20 fps
 UPDATE_FREQ = 3  # Frames per NN ran to get new movement
 
 
-class MyGame(arcade.Window):
+class MyGame(arcade.View):
     """
     Main application class.
     """
 
-    def __init__(self, width, height, title):
+    def __init__(self):
 
         # Call the parent class initializer
-        super().__init__(width, height, title)
+        super().__init__()
 
         # Variables that will hold sprite lists
         self.player_list = arcade.SpriteList()
@@ -62,8 +63,6 @@ class MyGame(arcade.Window):
 
     def setup(self):
         """ Set up the game and initialize the variables. """
-
-        self.set_update_rate(FRAME_RATE)  # sets fps to FRAME_RATE
 
         # Sprite lists setup
         self.player_list = arcade.SpriteList()
@@ -177,8 +176,12 @@ def main():
     SCREEN_WIDTH = 1000
     SCREEN_HEIGHT = 750
     SCREEN_TITLE = "Track learning"
-    game_window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    game_window.setup()
+
+    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+    window.set_update_rate(FRAME_RATE)  # sets fps to FRAME_RATE
+    start_view = MyGame()
+    window.show_view(start_view)
+    start_view.setup()
     arcade.run()
 
 
