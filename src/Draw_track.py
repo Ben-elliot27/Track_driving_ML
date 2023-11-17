@@ -8,9 +8,10 @@ import numpy as np
 
 from Wall import Wall
 
-WALL_SPRITE_IMG = '../images/wall_sprite.png'
-WALL_SCALING = 0.3
-DISTANCE_BETWEEN_WALLS = 5
+WALL_SPRITE_IMG = '../images/wall_2.png'
+WALL_SCALING = 0.1
+WALL_WIDTH = 0.5
+DISTANCE_BETWEEN_WALLS = 10
 
 class Draw_track(arcade.View):
 
@@ -42,11 +43,15 @@ class Draw_track(arcade.View):
         :return:
         """
         self.clear()
-        arcade.draw_text("""Draw track \n
-        press d to start drawing, \n
-        press e for eraser, \n
-        press S to save track""", self.window.width - 30, self.window.height - 30,
+
+        arcade.draw_text("press d to start drawing", self.window.width - 90, self.window.height - 30,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
+        arcade.draw_text("press e for eraser,", self.window.width - 90, self.window.height - 50,
+                         arcade.color.WHITE, font_size=10, anchor_x="center")
+        arcade.draw_text("press S to save track", self.window.width - 90, self.window.height - 70,
+                         arcade.color.WHITE, font_size=10, anchor_x="center")
+
+
         self.wall_list.draw()
 
     def on_key_press(self, key, modifiers: int):
@@ -77,11 +82,10 @@ class Draw_track(arcade.View):
         pass
 
 
-    def spawn_wall(self, cursor_pos: list, d_cursor_pos: list):
+    def spawn_wall(self, cursor_pos: list):
         """
         spawns wall at current cursor position
         :param cursor_pos: [x_pos, y_pos] of cursor
-        :param d_cursor_pos: [dx, dy] change in position of cursor
         :return:
         """
         self.wall_sprite = Wall(WALL_SPRITE_IMG, scale=WALL_SCALING)
@@ -90,8 +94,17 @@ class Draw_track(arcade.View):
         self.wall_sprite.center_y = cursor_pos[1]
 
         try:
-            self.wall_sprite.angle = np.arctan(d_cursor_pos[0] / d_cursor_pos[1])
-        except ZeroDivisionError:
+            last_wall = self.wall_list[-1]
+            last_end_x = last_wall.center_x + np.cos(np.degrees(last_wall.angle)) * WALL_WIDTH
+            last_end_y = last_wall.center_y + np.sin(np.degrees(last_wall.angle)) * WALL_WIDTH
+
+            del_x = np.array(self.wall_sprite.center_x - last_end_x)
+            del_y = np.array(self.wall_sprite.center_y - last_end_y)
+
+            self.wall_sprite.angle = np.arctan2(del_y, del_x) * 180/np.pi
+        except IndexError:
+
+            #zero division or index error
             self.wall_sprite.angle = 0
 
         self.wall_list.append(self.wall_sprite)
@@ -113,7 +126,9 @@ class Draw_track(arcade.View):
             return True
 
 
-    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, _buttons: int, _modifiers: int):
+
+
+    def on_mouse_drag(self, x: int, y: int, dx: int, dy: int, buttons: int, _modifiers: int):
         """
         Called when mouse dragged
 
@@ -121,15 +136,17 @@ class Draw_track(arcade.View):
         :param int y: y position of mouse
         :param int dx: Change in x since the last time this method was called
         :param int dy: Change in y since the last time this method was called
-        :param int _buttons: Which button is pressed
+        :param int buttons: Which button is pressed
         :param int _modifiers: Bitwise 'and' of all modifiers (shift, ctrl, num lock)
                               pressed during this event. See :ref:`keyboard_modifiers`.
         """
+        if self.draw_walls:
+            mouse_pos = [x, y]
+            if self.is_far_enough_from_other_wall(mouse_pos):
+                self.spawn_wall(mouse_pos)
 
-        mouse_pos = [x, y]
-        d_mouse_pos = [dx, dy]
-        if self.is_far_enough_from_other_wall(mouse_pos):
-            self.spawn_wall(mouse_pos, d_mouse_pos)
+
+
 
 
 
