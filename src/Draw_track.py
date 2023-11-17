@@ -13,6 +13,8 @@ WALL_SCALING = 0.1
 WALL_WIDTH = 0.5
 DISTANCE_BETWEEN_WALLS = 10
 
+RUBBER_SPRITE_IMG = '../images/rubber_sprite.png'
+
 class Draw_track(arcade.View):
 
     def __init__(self):
@@ -144,6 +146,33 @@ class Draw_track(arcade.View):
             mouse_pos = [x, y]
             if self.is_far_enough_from_other_wall(mouse_pos):
                 self.spawn_wall(mouse_pos)
+
+    def save_track(self, name):
+        """
+        Saves the current track (by saving the positions of the walls as a pickle dump)
+        SAVES IT IN FORM [[(x1, y1), (x2, y2), ...], [36, 45, ...]]
+        :param name: name of the file
+        :return:
+        """
+        wall_positions = [] # list of tuples of position
+        wall_angles = [] # list of wall angles
+        for wall in self.wall_list:
+            wall_positions.append(wall.position)
+            wall_angles.append(wall.angle)
+        f = open(f'../Tracks/{name}', 'wb')
+        pickle.dump([wall_positions, wall_angles])
+        f.close()
+
+    def eraser(self):
+        """
+        An erasor to erase current pieces of placed track
+        Spawns a rubber sprite
+        any wall colliding with the rubber sprite is deleted
+        can make rubber bigger or lower with certain keys
+        :return:
+        """
+
+
 
 
 
