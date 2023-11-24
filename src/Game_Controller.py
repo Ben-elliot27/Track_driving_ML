@@ -3,6 +3,10 @@ Main game class - handles running of arcade and window as well as setting up spr
 
 Because it uses arcade, a simple game library, it doesn't have many features such as proper ray-casts, so they are
 implemented 'dodgily' as a series of individual objects.
+
+TODO: add loading of a previous model to a UI element + loading of track
+TODO: make it so you can leave the game view and go back to main menu
+
 """
 
 import arcade
@@ -12,12 +16,16 @@ from Player import Player
 from Wall import Wall
 from Draw_track import Draw_track
 
+from Main_Menu import Main_menu
+
 # Options: "Evolution"
 LEARNING_METHOD = "Evolution"  # Method by which the AI will be trained
 
 FRAME_RATE = 1 / 20  # 20 fps
 
 UPDATE_FREQ = 3  # Frames per NN ran to get new movement
+
+
 
 
 class MyGame(arcade.View):
@@ -60,6 +68,8 @@ class MyGame(arcade.View):
         self.WALL_ANGLES = [0, 90, 0, 90, 0, 90, 0, 90]
 
         self.player_spawn_pos = [50, 50]
+
+
 
     def setup(self):
         """ Set up the game and initialize the variables. """
@@ -131,6 +141,9 @@ class MyGame(arcade.View):
         # This command has to happen before start drawing
         self.clear()
 
+        arcade.draw_text("press ESC to access menu", self.window.width - 90, self.window.height - 30,
+                         arcade.color.WHITE, font_size=10, anchor_x="center")
+
         self.wall_list.draw()  # Draw the walls
 
         # Draw the best players if there are any yet
@@ -170,22 +183,9 @@ class MyGame(arcade.View):
         if key == arcade.key.S:
             self.learning_alg.save = True
 
-
-def main():
-    """ Main function """
-    SCREEN_WIDTH = 1000
-    SCREEN_HEIGHT = 750
-    SCREEN_TITLE = "Track learning"
-
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-    window.set_update_rate(FRAME_RATE)  # sets fps to FRAME_RATE
-    start_view = MyGame()
-    window.show_view(start_view)
-    start_view.setup()
-    arcade.run()
+        if key == arcade.key.ESCAPE:
+            view = Main_menu()
+            self.window.show_view(view)
 
 
 # --------------------------------------------------------------------------------------
-
-
-main()

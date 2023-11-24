@@ -1,10 +1,16 @@
 """
 Handles the drawing of the track
+
+TODO: Add ability to edit a previously saved track
 """
+import time
 
 import arcade
+import arcade.gui
 import pickle
 import numpy as np
+
+
 
 from Wall import Wall
 
@@ -22,13 +28,51 @@ class Draw_track(arcade.View):
     def __init__(self):
 
         super().__init__()
+
         self.wall_list = arcade.SpriteList()
         self.wall_sprite = None
         self.draw_walls = False
         self.erase_walls = False
+        self.save = False
 
         self.rubber_sprite = Wall(RUBBER_SPRITE_IMG, scale=RUBBER_INIT_SCALE)
         self.rubber_sprite.visible = False
+
+        # --------------------------------------------- GUI ------------------------------------------------------------
+
+        self.manager = arcade.gui.UIManager()
+        self.manager.enable()
+
+        self.file_name_box = arcade.gui.UIInputText(
+            x=self.window.width/2,
+            y=self.window.height/2,
+            width = 300,
+            height = 50,
+            text = "Enter File name",
+            font_name = ('Arial',),
+            font_size = 18,
+            text_color = arcade.color.WHITE)
+
+        # Create a button
+        self.submit_file_button = arcade.gui.UIFlatButton(
+          color=arcade.color.DARK_BLUE_GRAY,
+          text='Submit',
+          width=90,
+          height=40,
+          x=self.window.height/2 + 100,
+          y=self.window.height/2)
+        self.submit_file_button.on_click = self.submit_file_on_click
+
+        self.v_box = arcade.gui.UIBoxLayout()
+        self.v_box.add(self.file_name_box)
+        self.v_box.add(self.submit_file_button)
+
+        self.manager.add(
+            arcade.gui.UIAnchorWidget(
+                anchor_x="center_x",
+                anchor_y="center_y",
+                child=self.v_box)
+        )
 
         arcade.set_background_color(arcade.color.AMAZON)
 
@@ -69,6 +113,11 @@ class Draw_track(arcade.View):
                              arcade.color.WHITE, font_size=10, anchor_x="left")
             arcade.draw_text(f"Press UP/DOWN arrow keys to adjust eraser size", 10, self.window.height - 50,
                              arcade.color.WHITE, font_size=10, anchor_x="left")
+        if self.save:
+            self.manager.draw()
+            arcade.draw_text(f"Press BACKSLASH to exit saving mode", 10, self.window.height - 30,
+                             arcade.color.WHITE, font_size=10, anchor_x="left")
+
 
 
         self.wall_list.draw()
@@ -81,28 +130,33 @@ class Draw_track(arcade.View):
         :param modifiers:
         :return:
         """
+        if not self.save:
+            match key:
+                case arcade.key.D:
+                    # draw
+                    self.erase_walls = False
+                    self.rubber_sprite.visible = False
+                    self.draw_walls = not self.draw_walls
+                case arcade.key.E:
+                    # erase
+                    self.draw_walls = False
+                    self.rubber_sprite.visible = not self.rubber_sprite.visible
+                    self.erase_walls = not self.erase_walls
+                case arcade.key.UP:
+                    # make rubber bigger
+                    self.rubber_sprite.scale += RUBBER_SCALING
+                case arcade.key.DOWN:
+                    # make rubber smaller
+                    self.rubber_sprite.scale -= RUBBER_SCALING
+                case arcade.key.S:
+                    # save current track
+                    self.erase_walls = False
+                    self.draw_walls = False
+                    self.save = True
 
-        match key:
-            case arcade.key.D:
-                # draw
-                self.erase_walls = False
-                self.rubber_sprite.visible = False
-                self.draw_walls = not self.draw_walls
-            case arcade.key.E:
-                # erase
-                self.draw_walls = False
-                self.rubber_sprite.visible = not self.rubber_sprite.visible
-                self.erase_walls = not self.erase_walls
-            case arcade.key.UP:
-                # make rubber bigger
-                self.rubber_sprite.scale += RUBBER_SCALING
-            case arcade.key.DOWN:
-                # make rubber smaller
-                self.rubber_sprite.scale -= RUBBER_SCALING
-            case arcade.key.S:
-                # save current track
-                # self.save_track(name='name')
-                pass
+        elif key == arcade.key.BACKSLASH:
+            # Turn of saving mode
+            self.save = False
 
 
 
@@ -198,18 +252,26 @@ class Draw_track(arcade.View):
         :param name: name of the file
         :return:
         """
-        wall_positions = [] # list of tuples of position
-        wall_angles = [] # list of wall angles
+
+
+        wall_positions = []  # list of tuples of position
+        wall_angles = []  # list of wall angles
         for wall in self.wall_list:
             wall_positions.append(wall.position)
             wall_angles.append(wall.angle)
         f = open(f'../Tracks/{name}', 'wb')
-        pickle.dump([wall_positions, wall_angles])
+        pickle.dump([wall_positions, wall_angles], f)
         f.close()
+        self.submit_file_button.text = "Saved"
+
+        time.sleep(0.3)
+
+        self.save = False
+
 
     def eraser(self, mouse_pos):
         """
-        An erasor to erase current pieces of placed track
+        An eraser to erase current pieces of placed track
         Spawns a rubber sprite
         any wall colliding with the rubber sprite is deleted
         can make rubber bigger or lower with certain keys
@@ -221,6 +283,16 @@ class Draw_track(arcade.View):
         delete_list = arcade.check_for_collision_with_list(self.rubber_sprite, self.wall_list)
         for wall in delete_list:
             self.wall_list.remove(wall)
+
+    def submit_file_on_click(self, a):
+        """
+        Handles when the submit file name button is pressed
+        :return:
+        """
+        print(a)
+        name = self.file_name_box.text
+        self.save_track(name)
+
 
 
 
