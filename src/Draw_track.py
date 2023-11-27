@@ -2,7 +2,6 @@
 Handles the drawing of the track
 
 TODO: Add ability to edit a previously saved track
-TODO: Return to menu
 """
 import time
 
@@ -10,7 +9,6 @@ import arcade
 import arcade.gui
 import pickle
 import numpy as np
-
 
 
 from Wall import Wall
@@ -89,6 +87,8 @@ class Draw_track(arcade.View):
         self.draw_walls = False
 
         self.rubber_sprite.visible = False
+
+        self.manager.enable()
 
         arcade.set_background_color(arcade.color.AMAZON)
 
@@ -263,7 +263,6 @@ class Draw_track(arcade.View):
         :return:
         """
 
-
         wall_positions = []  # list of tuples of position
         wall_angles = []  # list of wall angles
         for wall in self.wall_list:
@@ -299,9 +298,15 @@ class Draw_track(arcade.View):
         Handles when the submit file name button is pressed
         :return:
         """
-        print(a)
         name = self.file_name_box.text
         self.save_track(name)
+
+    def on_hide_view(self):
+        """
+        Called when view is closed
+        :return:
+        """
+        self.manager.disable()
 
 
 

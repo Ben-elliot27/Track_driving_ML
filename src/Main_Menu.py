@@ -40,10 +40,18 @@ class Main_menu(arcade.View):
 
         self.wall_list = arcade.SpriteList()
 
+        # Automatically load all tracks
+        self.tracks = self.get_saved_tracks()
+
+        if len(self.tracks) == 0:
+            self.tracks = ["NO SAVED TRACKS"]
+
+        self.current_selected_track = self.tracks[0]
+
+        # --------------------------------------------- GUI ------------------------------------------------------------
+
         self.manager_1 = arcade.gui.UIManager()
         self.manager_1.enable()
-
-
 
         self.run_game_button = arcade.gui.UIFlatButton(
           color=arcade.color.DARK_BLUE_GRAY,
@@ -63,16 +71,22 @@ class Main_menu(arcade.View):
           y=self.window.height/2)
         self.draw_track_button.on_click = self.draw_track
 
-        # Automatically load all tracks
-        self.tracks = self.get_saved_tracks()
-
-        if len(self.tracks) == 0:
-            self.tracks = ["NO SAVED TRACKS"]
+        self.load_new_track_button = arcade.gui.UIFlatButton(
+          color=arcade.color.DARK_YELLOW,
+          text='LOAD A DIFFERENT TRACK',
+          width=200,
+          height=100,
+          x=self.window.width/2,
+          y=self.window.height/2)
+        self.load_new_track_button.on_click = self.load_diff_track
 
 
         self.v_box = arcade.gui.UIBoxLayout()
         self.v_box.add(self.run_game_button)
         self.v_box.add(self.draw_track_button)
+        self.v_box.add(self.load_new_track_button)
+
+
 
         self.manager_1.add(
             arcade.gui.UIAnchorWidget(
@@ -95,12 +109,18 @@ class Main_menu(arcade.View):
         # When view first shown, load the first track in background
         self.load_track(self.tracks[0])
 
+        # Enable UI manager
+        self.manager_1.enable()
+
     def on_draw(self):
         """
         Render the screen
         :return:
         """
         self.clear()
+
+        arcade.draw_text(f"{self.current_selected_track}", self.window.width - 90, self.window.height - 30,
+                         arcade.color.WHITE, font_size=10, anchor_x="center")
 
         self.manager_1.draw()
 
@@ -112,8 +132,7 @@ class Main_menu(arcade.View):
         Handles what happens when the draw track button is pressed
         :return:
         """
-        print("draw_track")
-        self.window.show_view(Draw_track(self))
+        self.window.show_view(Draw_track(Main_menu))
 
     def run_game(self, a):
         """
@@ -157,6 +176,21 @@ class Main_menu(arcade.View):
         track_list = glob.glob('../Tracks/*')
 
         return track_list
+
+    def load_diff_track(self, a):
+        """
+        Load a different track when button clicked
+        :return:
+        """
+
+
+
+    def on_hide_view(self):
+        """
+        Called when view is hidden
+        :return:
+        """
+        self.manager_1.disable()
 
 
 
