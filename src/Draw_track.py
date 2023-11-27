@@ -2,6 +2,7 @@
 Handles the drawing of the track
 
 TODO: Add ability to edit a previously saved track
+TODO: Return to menu
 """
 import time
 
@@ -25,9 +26,11 @@ RUBBER_SCALING = 0.005
 
 class Draw_track(arcade.View):
 
-    def __init__(self):
+    def __init__(self, Main_Menu):
 
         super().__init__()
+
+        self.Main_menu = Main_Menu
 
         self.wall_list = arcade.SpriteList()
         self.wall_sprite = None
@@ -104,6 +107,8 @@ class Draw_track(arcade.View):
                          arcade.color.WHITE, font_size=10, anchor_x="center")
         arcade.draw_text("press S to save track", self.window.width - 90, self.window.height - 70,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
+        arcade.draw_text("press ESC to return to main menu", self.window.width - 110, self.window.height - 90,
+                         arcade.color.WHITE, font_size=10, anchor_x="center")
 
         if self.draw_walls:
             arcade.draw_text(f"Mode: Drawing", 10, self.window.height - 30,
@@ -153,10 +158,15 @@ class Draw_track(arcade.View):
                     self.erase_walls = False
                     self.draw_walls = False
                     self.save = True
+                case arcade.key.ESCAPE:
+                    # Return to main menu
+                    self.window.show_view(self.Main_menu)
 
         elif key == arcade.key.BACKSLASH:
             # Turn of saving mode
             self.save = False
+        elif key == arcade.key.ESCAPE:
+            self.window.show_view(self.Main_menu)
 
 
 
@@ -315,4 +325,3 @@ def main():
     window.show_view(start_view)
     arcade.run()
 
-main()

@@ -10,15 +10,22 @@ Want to be able to display currently selected track
 and have ability to change loaded track
 
 TODO: Add functionality for when run game button pressed
+TODO: Add dropdown for different tracks
 """
 import arcade
 import arcade.gui
 import pickle
+import glob
+
+
+
 
 from Game_Controller import MyGame
 from Draw_track import Draw_track
 
 from Wall import Wall
+
+
 
 WALL_SPRITE_IMG = '../images/wall_2.png'
 WALL_SCALING = 0.1
@@ -41,20 +48,26 @@ class Main_menu(arcade.View):
         self.run_game_button = arcade.gui.UIFlatButton(
           color=arcade.color.DARK_BLUE_GRAY,
           text='Run Game',
-          width=90,
-          height=40,
-          x=self.window.height/2 - 100,
+          width=400,
+          height=200,
+          x=self.window.width/2,
           y=self.window.height/2)
         self.run_game_button.on_click = self.run_game
 
         self.draw_track_button = arcade.gui.UIFlatButton(
           color=arcade.color.DARK_BLUE_GRAY,
           text='Draw a new track',
-          width=90,
-          height=40,
-          x=self.window.height/2 + 100,
+          width=400,
+          height=200,
+          x=self.window.width/2,
           y=self.window.height/2)
-        self.run_game_button.on_click = self.draw_track
+        self.draw_track_button.on_click = self.draw_track
+
+        # Automatically load all tracks
+        self.tracks = self.get_saved_tracks()
+
+        if len(self.tracks) == 0:
+            self.tracks = ["NO SAVED TRACKS"]
 
 
         self.v_box = arcade.gui.UIBoxLayout()
@@ -70,6 +83,18 @@ class Main_menu(arcade.View):
 
         arcade.set_background_color(arcade.color.ASH_GREY)
 
+    def on_show_view(self):
+        """
+        When view is first shown
+        :return:
+        """
+        # Automatically load all tracks
+        self.tracks = self.get_saved_tracks()
+        if len(self.tracks) == 0:
+            self.tracks = ["NO SAVED TRACKS"]
+        # When view first shown, load the first track in background
+        self.load_track(self.tracks[0])
+
     def on_draw(self):
         """
         Render the screen
@@ -79,19 +104,23 @@ class Main_menu(arcade.View):
 
         self.manager_1.draw()
 
+        self.wall_list.draw()
 
-    def draw_track(self):
+
+    def draw_track(self, a):
         """
         Handles what happens when the draw track button is pressed
         :return:
         """
-        self.window.show_view(Draw_track())
+        print("draw_track")
+        self.window.show_view(Draw_track(self))
 
-    def run_game(self):
+    def run_game(self, a):
         """
         Handles what happens when the run game button is pressed
         :return:
         """
+        print("run game")
 
     def load_track(self, file):
         """
@@ -99,11 +128,12 @@ class Main_menu(arcade.View):
         :param file: str relative directory of file
         :return:
         """
+        if file == 'NO SAVED TRACKS':
+            return
         f = open(file, 'rb')
         wall_dt = pickle.load(f)
 
         positions = []
-        angles = []
 
         for wall_position in wall_dt[0]:
             positions.append(wall_position)
@@ -119,6 +149,19 @@ class Main_menu(arcade.View):
             self.wall_sprite.angle = angle
             self.wall_list.append(self.wall_sprite)
 
+    def get_saved_tracks(self):
+        """
+        A function to get a list of the saved tracks
+        :return: [str] track_list: list of directory of tracks
+        """
+        track_list = glob.glob('../Tracks/*')
+
+        return track_list
+
+
+
+
+
 
 
 def main():
@@ -131,5 +174,8 @@ def main():
     window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
     window.set_update_rate(FRAME_RATE)  # sets fps to FRAME_RATE
     menu_view = Main_menu()
-    window.show_view(Main_menu)
+    window.show_view(menu_view)
     arcade.run()
+
+
+main()

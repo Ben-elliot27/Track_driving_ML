@@ -16,7 +16,7 @@ from Player import Player
 from Wall import Wall
 from Draw_track import Draw_track
 
-from Main_Menu import Main_menu
+
 
 # Options: "Evolution"
 LEARNING_METHOD = "Evolution"  # Method by which the AI will be trained
@@ -33,10 +33,12 @@ class MyGame(arcade.View):
     Main application class.
     """
 
-    def __init__(self):
+    def __init__(self, MainMenu):
 
         # Call the parent class initializer
         super().__init__()
+
+        self.Main_Menu = MainMenu
 
         # Variables that will hold sprite lists
         self.player_list = arcade.SpriteList()
@@ -184,7 +186,7 @@ class MyGame(arcade.View):
             self.learning_alg.save = True
 
         if key == arcade.key.ESCAPE:
-            view = Main_menu()
+            view = self.Main_menu()
             self.window.show_view(view)
 
 
