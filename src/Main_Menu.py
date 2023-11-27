@@ -48,10 +48,15 @@ class Main_menu(arcade.View):
 
         self.current_selected_track = self.tracks[0]
 
+        self.track_select = False
+
         # --------------------------------------------- GUI ------------------------------------------------------------
 
         self.manager_1 = arcade.gui.UIManager()
         self.manager_1.enable()
+
+        self.manager_2 = arcade.gui.UIManager()
+        self.manager_2.disable()
 
         self.run_game_button = arcade.gui.UIFlatButton(
           color=arcade.color.DARK_BLUE_GRAY,
@@ -122,7 +127,10 @@ class Main_menu(arcade.View):
         arcade.draw_text(f"{self.current_selected_track}", self.window.width - 90, self.window.height - 30,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
 
-        self.manager_1.draw()
+        if self.track_select:
+            self.manager_2.draw()
+        else:
+            self.manager_1.draw()
 
         self.wall_list.draw()
 
@@ -149,15 +157,19 @@ class Main_menu(arcade.View):
         """
         if file == 'NO SAVED TRACKS':
             return
-        f = open(file, 'rb')
-        wall_dt = pickle.load(f)
+        try:
+            f = open(file, 'rb')
+            wall_dt = pickle.load(f)
 
-        positions = []
+            positions = []
 
-        for wall_position in wall_dt[0]:
-            positions.append(wall_position)
-        for i, wall_angle in enumerate(wall_dt[1]):
-            self.spawn_wall(positions[i], wall_angle)
+            for wall_position in wall_dt[0]:
+                positions.append(wall_position)
+            for i, wall_angle in enumerate(wall_dt[1]):
+                self.spawn_wall(positions[i], wall_angle)
+        except EOFError:
+            # Ran out of input
+            pass
 
 
     def spawn_wall(self, position, angle):
@@ -179,9 +191,50 @@ class Main_menu(arcade.View):
 
     def load_diff_track(self, a):
         """
-        Load a different track when button clicked
+        Load a different track when button clicked -----------------------------------------------------------------
         :return:
         """
+        self.manager_1.disable()
+        self.track_select = True
+        self.manager_2.enable()
+
+        buttons = []  # list of buttons
+        self.v_box2 = arcade.gui.UIBoxLayout()
+
+        if len(self.tracks) == 0:
+            # No saved tracks
+            print('No saved tracks')  # TODO: Add a proper feature for this rather than just printing to console
+        else:
+            for i, track in enumerate(self.tracks):
+                buttons.append(arcade.gui.UIFlatButton(
+                    color=arcade.color.DARK_BLUE_GRAY,
+                    text=f'{track}',
+                    x=self.window.width / 2,
+                    y=self.window.height / 2))
+                buttons[i].on_click = self.on_change_track
+
+                self.v_box2.add(buttons[i])
+
+            self.manager_1.add(
+                arcade.gui.UIAnchorWidget(
+                    child=self.v_box2)
+            )
+
+    def on_change_track(self, track):
+        """
+        Handles what happens when a track button is pressed
+        :param track:
+        :return:
+        """
+        self.manager_1.enable()
+        self.track_select = False
+        self.manager_2.disable()
+        print(track)
+
+
+
+
+
 
 
 
@@ -191,6 +244,11 @@ class Main_menu(arcade.View):
         :return:
         """
         self.manager_1.disable()
+        self.manager_2.disable()
+
+
+
+
 
 
 
