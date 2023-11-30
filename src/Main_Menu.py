@@ -30,6 +30,8 @@ from Wall import Wall
 WALL_SPRITE_IMG = '../images/wall_2.png'
 WALL_SCALING = 0.1
 
+TRACK_DIRECTORY = "../Tracks/"
+
 class Main_menu(arcade.View):
     """
     The main menu screen giving button options to go to all other screens
@@ -117,6 +119,8 @@ class Main_menu(arcade.View):
         # Enable UI manager
         self.manager_1.enable()
 
+        arcade.set_background_color(arcade.color.ASH_GREY)
+
     def on_draw(self):
         """
         Render the screen
@@ -124,7 +128,8 @@ class Main_menu(arcade.View):
         """
         self.clear()
 
-        arcade.draw_text(f"{self.current_selected_track}", self.window.width - 90, self.window.height - 30,
+        arcade.draw_text(f"Current selected track {self.current_selected_track[len(TRACK_DIRECTORY):]}",
+                         self.window.width - 100, self.window.height - 30,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
 
         if self.track_select:
@@ -140,7 +145,7 @@ class Main_menu(arcade.View):
         Handles what happens when the draw track button is pressed
         :return:
         """
-        self.window.show_view(Draw_track(Main_menu))
+        self.window.show_view(Draw_track(self))
 
     def run_game(self, a):
         """
@@ -185,7 +190,7 @@ class Main_menu(arcade.View):
         A function to get a list of the saved tracks
         :return: [str] track_list: list of directory of tracks
         """
-        track_list = glob.glob('../Tracks/*')
+        track_list = glob.glob(f'{TRACK_DIRECTORY}/*')
 
         return track_list
 
@@ -207,29 +212,32 @@ class Main_menu(arcade.View):
         else:
             for i, track in enumerate(self.tracks):
                 buttons.append(arcade.gui.UIFlatButton(
-                    color=arcade.color.DARK_BLUE_GRAY,
-                    text=f'{track}',
+                    color=arcade.color.GRAPE,
+                    text=f'{track[len(TRACK_DIRECTORY):]}',
                     x=self.window.width / 2,
-                    y=self.window.height / 2))
-                buttons[i].on_click = self.on_change_track
+                    y=self.window.height / 2,
+                    width=400,
+                    height=self.window.height / len(self.tracks) - 20))
+                buttons[i].on_click = self.on_change_track # NOT WORKING
 
                 self.v_box2.add(buttons[i])
 
-            self.manager_1.add(
+            self.manager_2.add(
                 arcade.gui.UIAnchorWidget(
                     child=self.v_box2)
             )
 
-    def on_change_track(self, track):
+    def on_change_track(self, event):
         """
         Handles what happens when a track button is pressed
-        :param track:
+        :param event: The onclick event
         :return:
         """
+        track = (f"{TRACK_DIRECTORY}{event.source.text}")
         self.manager_1.enable()
         self.track_select = False
         self.manager_2.disable()
-        print(track)
+        self.current_selected_track = track
 
 
 

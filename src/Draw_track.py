@@ -2,6 +2,10 @@
 Handles the drawing of the track
 
 TODO: Add ability to edit a previously saved track
+
+Pyglet 2.0 dev 23
+Arcade 2.6.17
+
 """
 import time
 
@@ -50,7 +54,6 @@ class Draw_track(arcade.View):
             width = 300,
             height = 50,
             text = "Enter File name",
-            font_name = ('Arial',),
             font_size = 18,
             text_color = arcade.color.WHITE)
 
@@ -329,4 +332,5 @@ def main():
     start_view = Draw_track()
     window.show_view(start_view)
     arcade.run()
+
 
