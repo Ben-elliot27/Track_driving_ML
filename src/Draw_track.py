@@ -1,10 +1,6 @@
 """
 Handles the drawing of the track
 
-TODO: Add ability to edit a previously saved track
-TODO: Add a spwn point for the car
-TODO: Add spawn for the rewards
-
 Pyglet 2.0 dev 23
 Arcade 2.6.17
 
@@ -34,7 +30,7 @@ REWARD_INIT_SCALE = 0.2
 
 class Draw_track(arcade.View):
 
-    def __init__(self, Main_Menu, Track = None):
+    def __init__(self, Main_Menu, track=None):
         # Main_Menu: The main menu object
         # Track: If wanted to edit a previously saved track, otherwise draw fresh track
 
@@ -42,15 +38,22 @@ class Draw_track(arcade.View):
 
         self.Main_menu = Main_Menu
 
-        self.wall_list = arcade.SpriteList()
+        if track:
+            self.wall_list = track[0]
+            self.reward_list = track[1]
+            self.player_spawn_pos = track[2]
+        else:
+            self.wall_list = arcade.SpriteList()
+            self.reward_list = arcade.SpriteList()
+            self.player_spawn_pos = ['x', 'y']
+
         self.wall_sprite = None
 
-        self.reward_list = arcade.SpriteList()
+
 
         self.setting = None  # Holds information about current selected mode
         # OPTIONS: draw_walls, erase_walls, place_rewards, place_player, save
 
-        self.player_spawn_pos = ['x', 'y']
 
         self.rubber_sprite = Wall(RUBBER_SPRITE_IMG, scale=RUBBER_INIT_SCALE)
         self.rubber_sprite.visible = False

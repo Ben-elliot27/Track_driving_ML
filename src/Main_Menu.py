@@ -17,8 +17,9 @@ TODO: Need to make it so that when a new track is selected it actually drawns th
 import arcade
 import arcade.gui
 import pickle
+# TODO: replace pickle with dill so can pickle weakref
 import glob
-import numpy
+import numpy as np
 
 
 
@@ -276,7 +277,7 @@ class Main_menu(arcade.View):
                     y=self.window.height / 2,
                     width=400,
                     height=self.window.height / len(self.tracks) - 20))
-                buttons[i].on_click = self.on_change_track # NOT WORKING
+                buttons[i].on_click = self.on_change_track
 
                 self.v_box2.add(buttons[i])
 

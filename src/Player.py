@@ -16,7 +16,7 @@ from Wall import Wall
 
 class Player(arcade.Sprite):
 
-    def initialise(self):
+    def initialise(self, reward_list=None):
         """
         Initialises the player (needs to be called when first spawned
         Sets contants used by player as well
@@ -49,16 +49,11 @@ class Player(arcade.Sprite):
         self.SPRITE_SCALING = 0.05
 
         # Initials for rewards
-        self.REWARD_COUNT = 8
-        self.REWARD_SCALING = [.8, .8, .8, .8,
-                               .8, .8, .8, .8]
-        self.REWARD_X_POS = [332, 683, 950, 950,
-                             770, 350, 64, 64]
-        self.REWARD_Y_POS = [50, 50, 220, 400,
-                             680, 680, 530, 250]
-        self.REWARD_ANGLES = [90, 90, 0, 0, 90, 90, 0, 0]
-
-        self.NUM_REWARDS = len(self.REWARD_ANGLES)  # total number of rewards (=8)
+        self.reward_list = reward_list
+        self.num_rewards = len(self.reward_list)
+        self.current_reward_sprite = self.reward_list[0]
+        self.reward_distance = 10000
+        self.reward_index = 0
 
         self.current_vel = 0
         self.isDead = False
@@ -78,14 +73,6 @@ class Player(arcade.Sprite):
 
         self.ray_hit_list = np.array([0 for a in range(self.RAY_COUNT * self.RAY_DISTANCE)])
         self.ray_distance = np.array([10 for a in range(self.RAY_COUNT)])  # USED IN NN
-
-        self.spawn_rewards()  # Set up the first reward
-
-        self.reward_distance = 10000
-
-        self.reward_count = 0
-
-        self.reward_index = 0
 
         self.spawn_rays()
 
@@ -119,22 +106,12 @@ class Player(arcade.Sprite):
 
         self.ray_list.draw()
 
-    def spawn_rewards(self):
-        # Set up the rewards
-        self.reward_sprite = Wall(self.WALL_SPRITE_IMG,
-                                  self.REWARD_SCALING[0])
-        self.reward_sprite.center_x = self.REWARD_X_POS[0]
-        self.reward_sprite.center_y = self.REWARD_Y_POS[0]
-        self.reward_sprite.angle = self.REWARD_ANGLES[0]
-        self.reward_list.append(self.reward_sprite)
-
     def update(self):
         """
         :return:
         """
 
         if self.isActive:
-
             if self.current_vel < self.MAX_SPEED:
                 self.current_vel += self.change_vel
             elif self.current_vel >= self.MAX_SPEED:
@@ -245,15 +222,12 @@ class Player(arcade.Sprite):
         # self.reward_sprite might not be defined in right scope
         # Gets distance to the closest reward
 
-        if arcade.check_for_collision(self, self.reward_sprite):
+        if arcade.check_for_collision(self, self.current_reward_sprite):
             self.reward_count += 1
-            self.reward_index = (self.reward_index + 1) % self.NUM_REWARDS
-            self.reward_sprite.center_x = self.REWARD_X_POS[self.reward_index]
-            self.reward_sprite.center_y = self.REWARD_Y_POS[self.reward_index]
-            self.reward_sprite.angle = self.REWARD_ANGLES[self.reward_index]
-            self.reward_sprite.scaling = self.REWARD_SCALING[self.reward_index]
+            self.reward_index = (self.reward_index + 1) % self.num_rewards
+            self.current_reward_sprite = self.reward_list[self.reward_index]
 
-        self.reward_distance = arcade.get_distance_between_sprites(self, self.reward_sprite)
+        self.reward_distance = arcade.get_distance_between_sprites(self, self.current_reward_sprite)
 
     def update_cost(self):
         # function to update the cost (positive good)
@@ -266,7 +240,4 @@ class Player(arcade.Sprite):
     def reset_reward_list(self):
         # Set up the rewards
         self.reward_index = 0
-        self.reward_count = 0
-        self.reward_sprite.center_x = self.REWARD_X_POS[0]
-        self.reward_sprite.center_y = self.REWARD_Y_POS[0]
-        self.reward_sprite.angle = self.REWARD_ANGLES[0]
+        self.current_reward_sprite = self.reward_list[0]

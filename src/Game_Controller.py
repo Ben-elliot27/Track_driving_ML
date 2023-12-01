@@ -36,7 +36,7 @@ class MyGame(arcade.View):
     Main application class.
     """
 
-    def __init__(self, MainMenu, wall_list):
+    def __init__(self, MainMenu, track=None):
         #  In future also need to add rewards list
 
         # Call the parent class initializer
@@ -44,13 +44,19 @@ class MyGame(arcade.View):
 
         self.Main_Menu = MainMenu
 
+        if track:
+            self.wall_list = track[0]
+            self.reward_list = track[1]
+            self.player_spawn_pos = track[2]
+
+        else:
+            self.window.show_view(self.Main_Menu)
+
         # Variables that will hold sprite lists
         self.player_list = arcade.SpriteList()
-        self.wall_list = wall_list  # arcade.SpriteList()
 
         # Set up the player, wall, ray info
         self.player_sprite = None
-        self.wall_sprite = None
 
         # Set the background color
         arcade.set_background_color(arcade.color.AMAZON)
@@ -63,9 +69,6 @@ class MyGame(arcade.View):
         self.WALL_SPRITE_IMG = '../images/wall_sprite.png'
         self.PLAYER_SCALING = 0.05
 
-
-
-        self.player_spawn_pos = [50, 50]
 
 
 
@@ -98,13 +101,12 @@ class MyGame(arcade.View):
         PLAYER_SPAWN_POS: [x: float, y: float]
         :return:
         """
-        # TODO: May want to set player spawn when drawing the track
         self.player_sprite = Player(self.CAR_SPRITE_IMG,
                                     self.PLAYER_SCALING)
         self.player_sprite.center_x = self.player_spawn_pos[0]
         self.player_sprite.center_y = self.player_spawn_pos[1]
         self.player_list.append(self.player_sprite)
-        self.player_sprite.initialise()
+        self.player_sprite.initialise(reward_list=self.reward_list)
 
 
     def on_draw(self):
@@ -125,8 +127,9 @@ class MyGame(arcade.View):
             for player in self.learning_alg.best_players:
                 player.draw()
                 player.ray_list.draw()
-                player.reward_list.draw() # TODO: reward list is gonna need to change
+                player.reward_list.draw()
         except:
+            print("No best players yet")
             # No best_player list yet
             for player in self.player_list[0:2]:
                 player.draw()
@@ -158,7 +161,7 @@ class MyGame(arcade.View):
             self.learning_alg.save = True
 
         if key == arcade.key.ESCAPE:
-            self.window.show_view(self.Main_Menu) # TODO: make it so that you can go to/from main menu without losing progress
+            self.window.show_view(self.Main_Menu)  # TODO: make it so that you can go to/from main menu without losing progress
 
 
 # --------------------------------------------------------------------------------------
