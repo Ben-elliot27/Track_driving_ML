@@ -11,11 +11,14 @@ and have ability to change loaded track
 
 TODO: Add functionality for when run game button pressed
 TODO: Add dropdown for different tracks
+TODO: Need to make it so that when a new track is selected it actually drawns the new track in background
+
 """
 import arcade
 import arcade.gui
 import pickle
 import glob
+import numpy
 
 
 
@@ -152,7 +155,7 @@ class Main_menu(arcade.View):
         Handles what happens when the run game button is pressed
         :return:
         """
-        print("run game")
+        self.window.show_view(MyGame(self, self.wall_list))
 
     def load_track(self, file):
         """
@@ -175,6 +178,33 @@ class Main_menu(arcade.View):
         except EOFError:
             # Ran out of input
             pass
+
+    def spawn_wall(self, cursor_pos: list):
+        """
+        spawns wall at current cursor position
+        :param cursor_pos: [x_pos, y_pos] of cursor
+        :return:
+        """
+        self.wall_sprite = Wall(WALL_SPRITE_IMG, scale=WALL_SCALING)
+
+        self.wall_sprite.center_x = cursor_pos[0]
+        self.wall_sprite.center_y = cursor_pos[1]
+
+        try:
+            last_wall = self.wall_list[-1]
+            last_end_x = last_wall.center_x + np.cos(np.degrees(last_wall.angle)) * WALL_WIDTH
+            last_end_y = last_wall.center_y + np.sin(np.degrees(last_wall.angle)) * WALL_WIDTH
+
+            del_x = np.array(self.wall_sprite.center_x - last_end_x)
+            del_y = np.array(self.wall_sprite.center_y - last_end_y)
+
+            self.wall_sprite.angle = np.arctan2(del_y, del_x) * 180/np.pi
+        except IndexError:
+
+            #zero division or index error
+            self.wall_sprite.angle = 0
+
+        self.wall_list.append(self.wall_sprite)
 
 
     def spawn_wall(self, position, angle):

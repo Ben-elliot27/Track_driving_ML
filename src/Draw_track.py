@@ -2,6 +2,8 @@
 Handles the drawing of the track
 
 TODO: Add ability to edit a previously saved track
+TODO: Add a spwn point for the car
+TODO: Add spawn for the rewards
 
 Pyglet 2.0 dev 23
 Arcade 2.6.17
@@ -26,6 +28,9 @@ RUBBER_SPRITE_IMG = '../images/rubber_sprite.png'
 RUBBER_INIT_SCALE = 0.05
 RUBBER_SCALING = 0.005
 
+ROTATION = 5
+REWARD_INIT_SCALE = 2
+
 class Draw_track(arcade.View):
 
     def __init__(self, Main_Menu):
@@ -36,12 +41,19 @@ class Draw_track(arcade.View):
 
         self.wall_list = arcade.SpriteList()
         self.wall_sprite = None
-        self.draw_walls = False
-        self.erase_walls = False
-        self.save = False
+
+        self.reward_list = arcade.SpriteList()
+
+        self.setting = None  # Holds information about current selected mode
+        # OPTIONS: draw_walls, erase_walls, place_rewards, place_player, save
+
+        self.player_spawn_pos = ['x', 'y']
 
         self.rubber_sprite = Wall(RUBBER_SPRITE_IMG, scale=RUBBER_INIT_SCALE)
         self.rubber_sprite.visible = False
+
+        self.reward_sprite = Wall(RUBBER_SPRITE_IMG, scale=REWARD_INIT_SCALE)
+        self.reward_sprite.visible = False
 
         # --------------------------------------------- GUI ------------------------------------------------------------
 
@@ -87,7 +99,11 @@ class Draw_track(arcade.View):
         """
         self.wall_list = arcade.SpriteList()
         self.wall_sprite = None
-        self.draw_walls = False
+
+        self.reward_list = arcade.SpriteList()
+        self.reward_sprite = None
+
+        self.setting = None
 
         self.rubber_sprite.visible = False
 
@@ -104,24 +120,36 @@ class Draw_track(arcade.View):
         """
         self.clear()
 
-        arcade.draw_text("press d to start drawing", self.window.width - 90, self.window.height - 30,
+        arcade.draw_text("press d to start drawing walls", self.window.width - 90, self.window.height - 30,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
         arcade.draw_text("press e for eraser,", self.window.width - 90, self.window.height - 50,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
         arcade.draw_text("press S to save track", self.window.width - 90, self.window.height - 70,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
-        arcade.draw_text("press ESC to return to main menu", self.window.width - 110, self.window.height - 90,
+        arcade.draw_text("press r to place reward gates", self.window.width - 90, self.window.height - 90,
+                         arcade.color.WHITE, font_size=10, anchor_x="center")
+        arcade.draw_text("press p to place player spawn point", self.window.width - 90, self.window.height - 110,
+                         arcade.color.WHITE, font_size=10, anchor_x="center")
+        arcade.draw_text("press ESC to return to main menu", self.window.width - 110, self.window.height - 130,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
 
-        if self.draw_walls:
+        if self.setting == 'draw_walls':
             arcade.draw_text(f"Mode: Drawing", 10, self.window.height - 30,
                              arcade.color.WHITE, font_size=10, anchor_x="left")
-        elif self.erase_walls:
+        elif self.setting == 'erase_walls':
             arcade.draw_text(f"Mode: Erasing", 10, self.window.height - 30,
                              arcade.color.WHITE, font_size=10, anchor_x="left")
             arcade.draw_text(f"Press UP/DOWN arrow keys to adjust eraser size", 10, self.window.height - 50,
                              arcade.color.WHITE, font_size=10, anchor_x="left")
-        if self.save:
+        elif self.setting == 'place_rewards':
+            arcade.draw_text(f"Mode: Reward placement", 10, self.window.height - 30,
+                             arcade.color.WHITE, font_size=10, anchor_x="left")
+            arcade.draw_text(f"Press RIGHT/LEFT arrow keys to rotate reward gate", 10, self.window.height - 50,
+                             arcade.color.WHITE, font_size=10, anchor_x="left")
+        elif self.setting == 'place_player':
+            arcade.draw_text(f"Mode: Player spawn", 10, self.window.height - 30,
+                             arcade.color.WHITE, font_size=10, anchor_x="left")
+        if self.setting == 'save':
             self.manager.draw()
             arcade.draw_text(f"Press BACKSLASH to exit saving mode", 10, self.window.height - 30,
                              arcade.color.WHITE, font_size=10, anchor_x="left")
@@ -142,32 +170,43 @@ class Draw_track(arcade.View):
             match key:
                 case arcade.key.D:
                     # draw
-                    self.erase_walls = False
+                    self.setting = 'draw_walls'
                     self.rubber_sprite.visible = False
-                    self.draw_walls = not self.draw_walls
                 case arcade.key.E:
                     # erase
-                    self.draw_walls = False
-                    self.rubber_sprite.visible = not self.rubber_sprite.visible
-                    self.erase_walls = not self.erase_walls
+                    self.setting = 'erase_walls'
+                    self.rubber_sprite.visible = True
                 case arcade.key.UP:
                     # make rubber bigger
                     self.rubber_sprite.scale += RUBBER_SCALING
                 case arcade.key.DOWN:
                     # make rubber smaller
                     self.rubber_sprite.scale -= RUBBER_SCALING
+                case arcade.key.RIGHT:
+                    # Rotate reward gate
+                    self.reward_sprite.angle += ROTATION
+                case arcade.key.LEFT:
+                    self.reward_sprite.angle -= ROTATION
                 case arcade.key.S:
                     # save current track
-                    self.erase_walls = False
-                    self.draw_walls = False
-                    self.save = True
+                    self.rubber_sprite.visible = False
+                    self.setting = 'save'
                 case arcade.key.ESCAPE:
                     # Return to main menu
                     self.window.show_view(self.Main_menu)
+                case arcade.key.P:
+                    # Place player
+                    self.rubber_sprite.visible = False
+                    self.setting = 'place_player'
+                case arcade.key.R:
+                    # Place rewards
+                    self.rubber_sprite.visible = False
+                    self.setting = 'place_rewards'
 
         elif key == arcade.key.BACKSLASH:
             # Turn of saving mode
-            self.save = False
+            self.rubber_sprite.visible = False
+            self.setting = None
         elif key == arcade.key.ESCAPE:
             self.window.show_view(self.Main_menu)
 
@@ -199,8 +238,7 @@ class Draw_track(arcade.View):
 
             self.wall_sprite.angle = np.arctan2(del_y, del_x) * 180/np.pi
         except IndexError:
-
-            #zero division or index error
+            #  zero division or index error
             self.wall_sprite.angle = 0
 
         self.wall_list.append(self.wall_sprite)
@@ -236,13 +274,14 @@ class Draw_track(arcade.View):
         :param int _modifiers: Bitwise 'and' of all modifiers (shift, ctrl, num lock)
                               pressed during this event. See :ref:`keyboard_modifiers`.
         """
-        if self.draw_walls:
+        if self.setting == 'draw_walls':
             mouse_pos = [x, y]
             if self.is_far_enough_from_other_wall(mouse_pos):
                 self.spawn_wall(mouse_pos)
 
-        elif self.erase_walls:
+        elif self.setting == 'erase_walls':
             self.eraser(mouse_pos=[x, y])
+
 
     def on_mouse_motion(self, x: int, y: int, dx: int, dy: int):
         """
@@ -254,8 +293,25 @@ class Draw_track(arcade.View):
         :param int dy: Change in y since the last time this method was called
         """
 
-        if self.erase_walls:
+        if self.setting == 'erase_walls':
             self.rubber_sprite.position = (x, y)
+        elif self.setting == 'place_rewards':
+            self.reward_sprite.position = (x, y)
+
+    def on_mouse_press(self, x: int, y: int, button: int, modifiers: int):
+        """
+        Called whenever mouse is clicked
+        :param x:
+        :param y:
+        :param button:
+        :param modifiers:
+        :return:
+        """
+        if self.setting == 'place_rewards':
+            self.place_reward()
+        elif self.setting == 'place_player':
+            self.player_spawn_pos = [x, y]
+
 
 
     def save_track(self, name):
@@ -293,6 +349,7 @@ class Draw_track(arcade.View):
         self.rubber_sprite.position = tuple(mouse_pos)
 
         delete_list = arcade.check_for_collision_with_list(self.rubber_sprite, self.wall_list)
+
         for wall in delete_list:
             self.wall_list.remove(wall)
 
@@ -303,6 +360,13 @@ class Draw_track(arcade.View):
         """
         name = self.file_name_box.text
         self.save_track(name)
+
+    def place_reward(self):
+        """
+        Places a reward where the user clicked
+        :return:
+        """
+        self.reward_list.append(self.reward_sprite)
 
     def on_hide_view(self):
         """
