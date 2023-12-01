@@ -55,6 +55,10 @@ class Main_menu(arcade.View):
 
         self.track_select = False
 
+        self.track_dt = None
+        self.reward_list = arcade.SpriteList()
+        self.player_spawn_pos = ['x', 'y']
+
         # --------------------------------------------- GUI ------------------------------------------------------------
 
         self.manager_1 = arcade.gui.UIManager()
@@ -81,6 +85,15 @@ class Main_menu(arcade.View):
           y=self.window.height/2)
         self.draw_track_button.on_click = self.draw_track
 
+        self.edit_track_button = arcade.gui.UIFlatButton(
+          color=arcade.color.DARK_BLUE_GRAY,
+          text='Edit currently loaded track',
+          width=400,
+          height=200,
+          x=self.window.width/2,
+          y=self.window.height/2)
+        self.edit_track_button.on_click = self.edit_track
+
         self.load_new_track_button = arcade.gui.UIFlatButton(
           color=arcade.color.DARK_YELLOW,
           text='LOAD A DIFFERENT TRACK',
@@ -91,9 +104,11 @@ class Main_menu(arcade.View):
         self.load_new_track_button.on_click = self.load_diff_track
 
 
+
         self.v_box = arcade.gui.UIBoxLayout()
         self.v_box.add(self.run_game_button)
         self.v_box.add(self.draw_track_button)
+        self.v_box.add(self.edit_track_button)
         self.v_box.add(self.load_new_track_button)
 
 
@@ -146,9 +161,17 @@ class Main_menu(arcade.View):
     def draw_track(self, a):
         """
         Handles what happens when the draw track button is pressed
+        :param a:
         :return:
         """
         self.window.show_view(Draw_track(self))
+    def edit_track(self, a):
+        """
+        Handles what happens when the edit track button is pressed
+        :param a:
+        :return:
+        """
+        self.window.show_view(Draw_track(self, self.track_dt))
 
     def run_game(self, a):
         """
@@ -167,14 +190,19 @@ class Main_menu(arcade.View):
             return
         try:
             f = open(file, 'rb')
-            wall_dt = pickle.load(f)
+            self.track_dt = pickle.load(f)
+            self.wall_list = self.track_dt[0]
+            self.reward_list = self.track_dt[1]
+            self.player_spawn_pos = self.track_dt[2]
 
-            positions = []
+            # wall_dt = pickle.load(f)
 
-            for wall_position in wall_dt[0]:
-                positions.append(wall_position)
-            for i, wall_angle in enumerate(wall_dt[1]):
-                self.spawn_wall(positions[i], wall_angle)
+            # positions = []
+            #
+            # for wall_position in wall_dt[0]:
+            #     positions.append(wall_position)
+            # for i, wall_angle in enumerate(wall_dt[1]):
+            #     self.spawn_wall(positions[i], wall_angle)
         except EOFError:
             # Ran out of input
             pass

@@ -29,11 +29,14 @@ RUBBER_INIT_SCALE = 0.05
 RUBBER_SCALING = 0.005
 
 ROTATION = 5
-REWARD_INIT_SCALE = 2
+REWARD_IMG = WALL_SPRITE_IMG
+REWARD_INIT_SCALE = 0.2
 
 class Draw_track(arcade.View):
 
-    def __init__(self, Main_Menu):
+    def __init__(self, Main_Menu, Track = None):
+        # Main_Menu: The main menu object
+        # Track: If wanted to edit a previously saved track, otherwise draw fresh track
 
         super().__init__()
 
@@ -52,8 +55,7 @@ class Draw_track(arcade.View):
         self.rubber_sprite = Wall(RUBBER_SPRITE_IMG, scale=RUBBER_INIT_SCALE)
         self.rubber_sprite.visible = False
 
-        self.reward_sprite = Wall(RUBBER_SPRITE_IMG, scale=REWARD_INIT_SCALE)
-        self.reward_sprite.visible = False
+        self.reward_sprite = Wall(REWARD_IMG, scale=REWARD_INIT_SCALE)
 
         # --------------------------------------------- GUI ------------------------------------------------------------
 
@@ -101,7 +103,6 @@ class Draw_track(arcade.View):
         self.wall_sprite = None
 
         self.reward_list = arcade.SpriteList()
-        self.reward_sprite = None
 
         self.setting = None
 
@@ -120,15 +121,15 @@ class Draw_track(arcade.View):
         """
         self.clear()
 
-        arcade.draw_text("press d to start drawing walls", self.window.width - 90, self.window.height - 30,
+        arcade.draw_text("press d to start drawing walls", self.window.width - 110, self.window.height - 30,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
-        arcade.draw_text("press e for eraser,", self.window.width - 90, self.window.height - 50,
+        arcade.draw_text("press e for eraser,", self.window.width - 110, self.window.height - 50,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
-        arcade.draw_text("press S to save track", self.window.width - 90, self.window.height - 70,
+        arcade.draw_text("press S to save track", self.window.width - 110, self.window.height - 70,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
-        arcade.draw_text("press r to place reward gates", self.window.width - 90, self.window.height - 90,
+        arcade.draw_text("press r to place reward gates", self.window.width - 110, self.window.height - 90,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
-        arcade.draw_text("press p to place player spawn point", self.window.width - 90, self.window.height - 110,
+        arcade.draw_text("press p to place player spawn point", self.window.width - 110, self.window.height - 110,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
         arcade.draw_text("press ESC to return to main menu", self.window.width - 110, self.window.height - 130,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
@@ -158,6 +159,9 @@ class Draw_track(arcade.View):
 
         self.wall_list.draw()
         self.rubber_sprite.draw()
+        if self.setting == 'place_rewards':
+            self.reward_sprite.draw()
+        self.reward_list.draw()
 
     def on_key_press(self, key, modifiers: int):
         """
@@ -166,7 +170,7 @@ class Draw_track(arcade.View):
         :param modifiers:
         :return:
         """
-        if not self.save:
+        if not self.setting == 'save':
             match key:
                 case arcade.key.D:
                     # draw
@@ -184,9 +188,9 @@ class Draw_track(arcade.View):
                     self.rubber_sprite.scale -= RUBBER_SCALING
                 case arcade.key.RIGHT:
                     # Rotate reward gate
-                    self.reward_sprite.angle += ROTATION
-                case arcade.key.LEFT:
                     self.reward_sprite.angle -= ROTATION
+                case arcade.key.LEFT:
+                    self.reward_sprite.angle += ROTATION
                 case arcade.key.S:
                     # save current track
                     self.rubber_sprite.visible = False
@@ -316,25 +320,22 @@ class Draw_track(arcade.View):
 
     def save_track(self, name):
         """
-        Saves the current track (by saving the positions of the walls as a pickle dump)
-        SAVES IT IN FORM [[(x1, y1), (x2, y2), ...], [36, 45, ...]]
+        Saves the current track (by saving the positions of the walls, rewards and starting player position
+         as a pickle dump [wall_list, reward_list, [x_player, y_player])
+
         :param name: name of the file
         :return:
         """
 
-        wall_positions = []  # list of tuples of position
-        wall_angles = []  # list of wall angles
-        for wall in self.wall_list:
-            wall_positions.append(wall.position)
-            wall_angles.append(wall.angle)
+        saved_dt = [self.wall_list, self.reward_list, self.player_spawn_pos]
         f = open(f'../Tracks/{name}', 'wb')
-        pickle.dump([wall_positions, wall_angles], f)
+        pickle.dump(saved_dt, f)
         f.close()
         self.submit_file_button.text = "Saved"
 
         time.sleep(0.3)
 
-        self.save = False
+        self.setting = None
 
 
     def eraser(self, mouse_pos):
@@ -349,9 +350,13 @@ class Draw_track(arcade.View):
         self.rubber_sprite.position = tuple(mouse_pos)
 
         delete_list = arcade.check_for_collision_with_list(self.rubber_sprite, self.wall_list)
+        delete_list_2 = arcade.check_for_collision_with_list(self.rubber_sprite, self.reward_list)
 
         for wall in delete_list:
             self.wall_list.remove(wall)
+
+        for reward in delete_list_2:
+            self.reward_list.remove(reward)
 
     def submit_file_on_click(self, a):
         """
@@ -366,7 +371,10 @@ class Draw_track(arcade.View):
         Places a reward where the user clicked
         :return:
         """
-        self.reward_list.append(self.reward_sprite)
+        new_reward = Wall(REWARD_IMG, REWARD_INIT_SCALE)
+        new_reward.position = self.reward_sprite.position
+        new_reward.angle = self.reward_sprite.angle
+        self.reward_list.append(new_reward)
 
     def on_hide_view(self):
         """
@@ -396,5 +404,6 @@ def main():
     start_view = Draw_track()
     window.show_view(start_view)
     arcade.run()
+
 
 
