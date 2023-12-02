@@ -12,12 +12,12 @@ and have ability to change loaded track
 TODO: Add functionality for when run game button pressed
 TODO: Add dropdown for different tracks
 TODO: Need to make it so that when a new track is selected it actually drawns the new track in background
+TODO: Add ability to delete a saved track
+TODO: Add selection for learning alg
 
 """
 import arcade
 import arcade.gui
-import pickle
-# TODO: replace pickle with dill so can pickle weakref
 import glob
 import numpy as np
 
@@ -56,9 +56,11 @@ class Main_menu(arcade.View):
 
         self.track_select = False
 
-        self.track_dt = None
+
         self.reward_list = arcade.SpriteList()
         self.player_spawn_pos = ['x', 'y']
+
+        self.track_dt = [self.wall_list, self.reward_list, self.player_spawn_pos]
 
         # --------------------------------------------- GUI ------------------------------------------------------------
 
@@ -134,6 +136,7 @@ class Main_menu(arcade.View):
             self.tracks = ["NO SAVED TRACKS"]
         # When view first shown, load the first track in background
         self.load_track(self.tracks[0])
+        self.track_dt = [self.wall_list, self.reward_list, self.player_spawn_pos]
 
         # Enable UI manager
         self.manager_1.enable()
@@ -147,6 +150,9 @@ class Main_menu(arcade.View):
         """
         self.clear()
 
+        self.wall_list.draw()
+        self.reward_list.draw()
+
         arcade.draw_text(f"Current selected track {self.current_selected_track[len(TRACK_DIRECTORY):]}",
                          self.window.width - 100, self.window.height - 30,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
@@ -156,7 +162,6 @@ class Main_menu(arcade.View):
         else:
             self.manager_1.draw()
 
-        self.wall_list.draw()
 
 
     def draw_track(self, a):
@@ -179,7 +184,7 @@ class Main_menu(arcade.View):
         Handles what happens when the run game button is pressed
         :return:
         """
-        self.window.show_view(MyGame(self, self.wall_list))
+        self.window.show_view(MyGame(self, self.track_dt))
 
     def load_track(self, file):
         """
@@ -189,60 +194,8 @@ class Main_menu(arcade.View):
         """
         if file == 'NO SAVED TRACKS':
             return
-        try:
-            f = open(file, 'rb')
-            self.track_dt = pickle.load(f)
-            self.wall_list = self.track_dt[0]
-            self.reward_list = self.track_dt[1]
-            self.player_spawn_pos = self.track_dt[2]
+        self.wall_list, self.reward_list, self.player_spawn_pos = Draw_track.load_track(file)
 
-            # wall_dt = pickle.load(f)
-
-            # positions = []
-            #
-            # for wall_position in wall_dt[0]:
-            #     positions.append(wall_position)
-            # for i, wall_angle in enumerate(wall_dt[1]):
-            #     self.spawn_wall(positions[i], wall_angle)
-        except EOFError:
-            # Ran out of input
-            pass
-
-    def spawn_wall(self, cursor_pos: list):
-        """
-        spawns wall at current cursor position
-        :param cursor_pos: [x_pos, y_pos] of cursor
-        :return:
-        """
-        self.wall_sprite = Wall(WALL_SPRITE_IMG, scale=WALL_SCALING)
-
-        self.wall_sprite.center_x = cursor_pos[0]
-        self.wall_sprite.center_y = cursor_pos[1]
-
-        try:
-            last_wall = self.wall_list[-1]
-            last_end_x = last_wall.center_x + np.cos(np.degrees(last_wall.angle)) * WALL_WIDTH
-            last_end_y = last_wall.center_y + np.sin(np.degrees(last_wall.angle)) * WALL_WIDTH
-
-            del_x = np.array(self.wall_sprite.center_x - last_end_x)
-            del_y = np.array(self.wall_sprite.center_y - last_end_y)
-
-            self.wall_sprite.angle = np.arctan2(del_y, del_x) * 180/np.pi
-        except IndexError:
-
-            #zero division or index error
-            self.wall_sprite.angle = 0
-
-        self.wall_list.append(self.wall_sprite)
-
-
-    def spawn_wall(self, position, angle):
-
-            self.wall_sprite = Wall(WALL_SPRITE_IMG,
-                                    WALL_SCALING)
-            self.wall_sprite.position = position
-            self.wall_sprite.angle = angle
-            self.wall_list.append(self.wall_sprite)
 
     def get_saved_tracks(self):
         """
@@ -262,6 +215,8 @@ class Main_menu(arcade.View):
         self.track_select = True
         self.manager_2.enable()
 
+        self.tracks = self.get_saved_tracks()
+
         buttons = []  # list of buttons
         self.v_box2 = arcade.gui.UIBoxLayout()
 
@@ -276,7 +231,7 @@ class Main_menu(arcade.View):
                     x=self.window.width / 2,
                     y=self.window.height / 2,
                     width=400,
-                    height=self.window.height / len(self.tracks) - 20))
+                    height=self.window.height / len(self.tracks) - 40))
                 buttons[i].on_click = self.on_change_track
 
                 self.v_box2.add(buttons[i])
@@ -296,7 +251,10 @@ class Main_menu(arcade.View):
         self.manager_1.enable()
         self.track_select = False
         self.manager_2.disable()
+        self.load_track(track)
         self.current_selected_track = track
+        self.track_dt = [self.wall_list, self.reward_list, self.player_spawn_pos]
+
 
 
 

@@ -25,14 +25,15 @@ RUBBER_INIT_SCALE = 0.05
 RUBBER_SCALING = 0.005
 
 ROTATION = 5
-REWARD_IMG = WALL_SPRITE_IMG
+REWARD_IMG = '../images/reward_gate.png'
 REWARD_INIT_SCALE = 0.2
 
 class Draw_track(arcade.View):
 
     def __init__(self, Main_Menu, track=None):
         # Main_Menu: The main menu object
-        # Track: If wanted to edit a previously saved track, otherwise draw fresh track
+        # Track: [wall_list, reward_list, player_spawn_pos]
+        # If wanted to edit a previously saved track, otherwise draw fresh track
 
         super().__init__()
 
@@ -102,10 +103,6 @@ class Draw_track(arcade.View):
         called when view first shown
         :return:
         """
-        self.wall_list = arcade.SpriteList()
-        self.wall_sprite = None
-
-        self.reward_list = arcade.SpriteList()
 
         self.setting = None
 
@@ -324,13 +321,22 @@ class Draw_track(arcade.View):
     def save_track(self, name):
         """
         Saves the current track (by saving the positions of the walls, rewards and starting player position
-         as a pickle dump [wall_list, reward_list, [x_player, y_player])
-
+         as a pickle dump
+          [[wall_list_position, wall_position_angle], [reward_list_position, reward_list_angle], [x_player, y_player])
+        Can't pickle the objects themselves as an arcade.spritelist() of sprite objects which is unpickle-able
         :param name: name of the file
         :return:
         """
+        wall_dt = []
+        for wall in self.wall_list:
+            wall_dt.append([wall.position, wall.angle])
 
-        saved_dt = [self.wall_list, self.reward_list, self.player_spawn_pos]
+        reward_dt = []
+        for reward in self.reward_list:
+            reward_dt.append([reward.position, reward.angle])
+
+        saved_dt = [wall_dt, reward_dt, self.player_spawn_pos]
+
         f = open(f'../Tracks/{name}', 'wb')
         pickle.dump(saved_dt, f)
         f.close()
@@ -385,6 +391,40 @@ class Draw_track(arcade.View):
         :return:
         """
         self.manager.disable()
+
+    @staticmethod
+    def load_track(file):
+        """
+        Loads a track given the file name
+        :param: str file: directory of file to load track from
+        :return: [wall_list, reward_list, player_spawn_pos]
+        """
+        wall_list = arcade.SpriteList()
+        reward_list = arcade.SpriteList()
+
+        f = open(file, 'rb')
+        try:
+            track_dt = pickle.load(f)
+
+            f.close()
+
+            for wall_dt in track_dt[0]:
+                wall_sprite = Wall(WALL_SPRITE_IMG, scale=WALL_SCALING)
+                wall_sprite.position = wall_dt[0]
+                wall_sprite.angle = wall_dt[1]
+                wall_list.append(wall_sprite)
+
+            for reward_dt in track_dt[1]:
+                reward_sprite = Wall(REWARD_IMG, REWARD_INIT_SCALE)
+                reward_sprite.position = reward_dt[0]
+                reward_sprite.angle = reward_dt[1]
+                reward_list.append(reward_sprite)
+        except EOFError:
+            # Ran out of data or file empty
+            return [wall_list, reward_list, [0, 0]]
+
+        return [wall_list, reward_list, track_dt[2]]
+
 
 
 
