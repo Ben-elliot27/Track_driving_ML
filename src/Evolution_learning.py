@@ -79,11 +79,12 @@ class Evolution_learning():
         t = Timer(EPOCH_TIME, self.on_cycle_end)
         t.start()
 
-    def on_startup_withmodel(self):
+    def on_startup_with_model(self, NN_dir):
         """
         FOR WHEN THE SAVED NN IS USED
         Set up the players, their NNs (based on saved model) and their weights
         Also start timer on how long it should run for (separate thread)
+        :param NN_dir :str: directory for the NN to be loaded
         :return:
         """
 
@@ -92,7 +93,7 @@ class Evolution_learning():
 
         for player in self.game_window.player_list:
 
-            model = keras.models.load_model('../models_evolution/current_best.keras')
+            model = keras.models.load_model(NN_dir)
 
             new_weights = []
 

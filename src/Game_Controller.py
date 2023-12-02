@@ -17,9 +17,10 @@ from Wall import Wall
 import pickle
 from Draw_track import Draw_track
 import arcade.gui
+import glob
 
 
-LEARNING_METHOD_Options = ["Evolution"]
+LEARNING_METHOD_Options = ["evolution"]
 FRAME_RATE = 1 / 20  # 20 fps
 
 UPDATE_FREQ = 3  # Frames per NN ran to get new movement
@@ -40,7 +41,7 @@ class MyGame(arcade.View):
         super().__init__()
 
         self.Main_Menu = MainMenu
-        self.LEARNING_METHOD = None # Method by which the AI will be trained
+        self.LEARNING_METHOD = None  # Method by which the AI will be trained
 
         self.NN_to_use = None  # The NN to be used in simulation
 
@@ -104,7 +105,7 @@ class MyGame(arcade.View):
 
         self.current_selected_options_text = arcade.gui.UITextArea(
             text=f"""
-            Current selected learning algorithm: {self.learning_alg}
+            Current selected learning algorithm: {self.LEARNING_METHOD}
             Current selected NN: {self.NN_to_use}
             """,
             font_size=12,
@@ -149,11 +150,6 @@ class MyGame(arcade.View):
                 child=self.v_box_NN)
         )
 
-
-
-
-
-
     def on_show_view(self):
         """
         Called whenever view is first shown
@@ -170,7 +166,7 @@ class MyGame(arcade.View):
             inp = input("Load from previously saved model (y/n)? ")  # TODO: needs to change
             if inp == 'y':
                 self.learning_alg = Evolution_learning(self)
-                self.learning_alg.on_startup_withmodel()
+                self.learning_alg.on_startup_with_model(NN_dir=self.NN_to_use)
             else:
                 self.learning_alg = Evolution_learning(self)
                 self.learning_alg.on_startup_init()
@@ -198,11 +194,18 @@ class MyGame(arcade.View):
 
             self.v_box_learning_alg.add(buttons[i])
 
-    def l_alg_change(self):
+    def l_alg_change(self, event):
         """
         Called whenever a learning algorithm option button is clicked
         :return:
         """
+        self.LEARNING_METHOD = event.source.text
+        self.current_selected_options_text.text = f"""
+            Current selected learning algorithm: {self.LEARNING_METHOD}
+            Current selected NN: {self.NN_to_use}
+            """
+        self.manager_1.enable()
+        self.manager_learning_alg.disable()
 
 
     def select_new_NN_model(self):
@@ -211,12 +214,57 @@ class MyGame(arcade.View):
         Shows screen for selecting the new NN
         :return:
         """
+        self.manager_1.disable()
+        self.manager_NN.enable()
+        self.manager_learning_alg.disable()
+
+        trained_nets = self.get_trained_nets()
+
+        self.NN_option_text = arcade.gui.UITextArea(
+            text=f"""{trained_nets}""",
+            font_size=8
+        )
+        NN_selection = arcade.gui.UIInputText(
+            text='Enter directory of NN',
+            font_size=14
+        )
+        submit_button = arcade.gui.UIFlatButton(
+            text='SUBMIT'
+        )
+        submit_button.on_click = self.submit_NN_name
+
+        self.v_box_NN = arcade.gui.UIBoxLayout()
+        self.v_box_NN.add(self.NN_option_text)
+        self.v_box_NN.add(NN_selection)
+        self.v_box_NN.add(submit_button)
+
+    def get_trained_nets(self):
+        """
+        Gets the list of saved neural networs
+        :return: saved_nets: list of directories of saved NNs
+        """
+        saved_nets = glob.glob(f'models_{self.LEARNING_METHOD}/*')
+
+        return saved_nets
+
+    def submit_NN_name(self):
+        """
+        Called when submit button pressed to submit NN file name
+        :return:
+        """
+        self.NN_to_use = f"../models_{self.LEARNING_METHOD}/{self.NN_option_text.text}"
+        self.manager_NN.disable()
+        self.manager_1.enable()
+
+
     def run_game(self):
         """
         Called when run_game button pressed
         Runs the game with current selected learning algorithm and NN
         :return:
         """
+        self.manager_1.disable()
+        self.setup()
 
 
     def spawn_player(self):
