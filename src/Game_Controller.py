@@ -43,7 +43,7 @@ class MyGame(arcade.View):
         self.Main_Menu = MainMenu
         self.LEARNING_METHOD = None  # Method by which the AI will be trained
 
-        self.NN_to_use = None  # The NN to be used in simulation
+        self.NN_to_use = 'NONE'  # The NN to be used in simulation
 
         if track:
             self.wall_list = track[0]
@@ -163,8 +163,7 @@ class MyGame(arcade.View):
         self.player_list = arcade.SpriteList()
 
         if self.LEARNING_METHOD == "Evolution":
-            inp = input("Load from previously saved model (y/n)? ")  # TODO: needs to change
-            if inp == 'y':
+            if self.NN_to_use != 'NONE':
                 self.learning_alg = Evolution_learning(self)
                 self.learning_alg.on_startup_with_model(NN_dir=self.NN_to_use)
             else:
@@ -221,7 +220,8 @@ class MyGame(arcade.View):
         trained_nets = self.get_trained_nets()
 
         self.NN_option_text = arcade.gui.UITextArea(
-            text=f"""{trained_nets}""",
+            text=f"""OPTIONS FOR NN for current selected learning method
+            NONE, {trained_nets}""",
             font_size=8
         )
         NN_selection = arcade.gui.UIInputText(
@@ -252,7 +252,7 @@ class MyGame(arcade.View):
         Called when submit button pressed to submit NN file name
         :return:
         """
-        self.NN_to_use = f"../models_{self.LEARNING_METHOD}/{self.NN_option_text.text}"
+        self.NN_to_use = f"{self.NN_option_text.text}"
         self.manager_NN.disable()
         self.manager_1.enable()
 
