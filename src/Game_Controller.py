@@ -70,6 +70,8 @@ class MyGame(arcade.View):
         self.WALL_SPRITE_IMG = '../images/wall_sprite.png'
         self.PLAYER_SCALING = 0.05
 
+        self.show_ray_reward_toggle = True
+
         # --------------------------------------------- GUI ------------------------------------------------------------
 
         # SCREEN 1
@@ -110,7 +112,8 @@ class MyGame(arcade.View):
             Current selected NN: {self.NN_to_use}
             """,
             font_size=12,
-            height=60
+            height=100,
+            width=self.window.width - 200
         )
 
         self.v_box = arcade.gui.UIBoxLayout(space_between=5)
@@ -229,11 +232,11 @@ class MyGame(arcade.View):
         self.NN_option_text = arcade.gui.UITextArea(
             text=f"""OPTIONS FOR NN for current selected learning method:
             NONE, {trained_nets}""",
-            font_size=20,
+            font_size=12,
             width=self.window.width - 30,
-            height=200
+            height=300
         )
-        NN_selection = arcade.gui.UIInputText(
+        self.NN_selection = arcade.gui.UIInputText(
             text='Enter directory of NN',
             font_size=14,
             width=self.window.height - 30
@@ -250,7 +253,7 @@ class MyGame(arcade.View):
 
         self.v_box_NN.clear()
         self.v_box_NN.add(self.NN_option_text)
-        self.v_box_NN.add(NN_selection)
+        self.v_box_NN.add(self.NN_selection)
         self.v_box_NN.add(submit_button)
 
     def get_trained_nets(self):
@@ -268,7 +271,7 @@ class MyGame(arcade.View):
         Called when submit button pressed to submit NN file name
         :return:
         """
-        self.NN_to_use = f"{self.NN_option_text.text}"
+        self.NN_to_use = f"{self.NN_selection.text}"
         self.current_selected_options_text.text = f"""
             Current selected learning algorithm: {self.LEARNING_METHOD}
             Current selected NN: {self.NN_to_use}
@@ -322,6 +325,8 @@ class MyGame(arcade.View):
                          arcade.color.WHITE, font_size=10, anchor_x="center")
         arcade.draw_text("press \ to select new learning algorithm or NN", self.window.width - 110,
                          self.window.height - 50, arcade.color.WHITE, font_size=10, anchor_x="center")
+        arcade.draw_text("press t to toggle showing rays", self.window.width - 110,
+                         self.window.height - 70, arcade.color.WHITE, font_size=10, anchor_x="center")
 
         # Draw the UI managers
         if self.menu_setting == MENUS[0]:
@@ -335,8 +340,9 @@ class MyGame(arcade.View):
         try:
             for player in self.learning_alg.best_players:
                 player.draw()
-                player.ray_list.draw()
-                player.reward_list.draw()
+                if self.show_ray_reward_toggle:
+                    player.ray_list.draw()
+                    player.current_reward_sprite.draw()
         except:
             # No best_player list yet
             for player in self.player_list[0:2]:
@@ -366,6 +372,8 @@ class MyGame(arcade.View):
             # Save the current model
             if key == arcade.key.S:
                 self.learning_alg.save = True
+            if key == arcade.key.T:
+                self.show_ray_reward_toggle = not self.show_ray_reward_toggle
 
         if key == arcade.key.ESCAPE:
             self.window.show_view(self.Main_Menu)  # TODO: make it so that you can go to/from main menu without losing progress

@@ -12,7 +12,7 @@ from Ray import Ray
 from Wall import Wall
 
 
-MAX_ACCELERATION = 0.5
+MAX_ACCELERATION = 1.0
 
 class Player(arcade.Sprite):
 
@@ -23,7 +23,7 @@ class Player(arcade.Sprite):
         :return:
         """
         # Speed limit
-        self.MAX_SPEED = 2.0
+        self.MAX_SPEED = 2.5
 
         # How fast we accelerate
         self.ACCELERATION_RATE = 0.5
@@ -90,8 +90,8 @@ class Player(arcade.Sprite):
     def spawn_rays(self):
         for i in range(self.RAY_DISTANCE):
             for a in range(self.RAY_COUNT):
-                self.RAY_DELTA_X[i][a] = i * self.RAY_GAP * math.cos(np.radians(a * 45))
-                self.RAY_DELTA_Y[i][a] = i * self.RAY_GAP * math.sin(np.radians(a * 45))
+                self.RAY_DELTA_X[i][a] = i * self.RAY_GAP * math.cos(np.radians(a * 360/self.RAY_COUNT))
+                self.RAY_DELTA_Y[i][a] = i * self.RAY_GAP * math.sin(np.radians(a * 360/self.RAY_COUNT))
                 self.RAY_ANGLE_DELTA[i][a] = self.RAY_ANGLES[a]
         self.RAY_DELTA_X = self.RAY_DELTA_X.flatten().tolist()
         self.RAY_DELTA_Y = self.RAY_DELTA_Y.flatten().tolist()
