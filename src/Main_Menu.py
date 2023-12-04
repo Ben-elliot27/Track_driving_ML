@@ -108,7 +108,7 @@ class Main_menu(arcade.View):
 
 
 
-        self.v_box = arcade.gui.UIBoxLayout()
+        self.v_box = arcade.gui.UIBoxLayout(space_between=5)
         self.v_box.add(self.run_game_button)
         self.v_box.add(self.draw_track_button)
         self.v_box.add(self.edit_track_button)
@@ -154,7 +154,7 @@ class Main_menu(arcade.View):
         self.reward_list.draw()
 
         arcade.draw_text(f"Current selected track {self.current_selected_track[len(TRACK_DIRECTORY):]}",
-                         self.window.width - 100, self.window.height - 30,
+                         self.window.width - 110, self.window.height - 30,
                          arcade.color.WHITE, font_size=10, anchor_x="center")
 
         if self.track_select:

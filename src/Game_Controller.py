@@ -27,7 +27,7 @@ UPDATE_FREQ = 3  # Frames per NN ran to get new movement
 
 
 
-
+MENUS = ['main_menu', 'alg_selector', 'NN_selector']
 
 
 class MyGame(arcade.View):
@@ -75,6 +75,7 @@ class MyGame(arcade.View):
         # SCREEN 1
         self.manager_1 = arcade.gui.UIManager()
         self.manager_1.enable()
+        self.menu_setting = MENUS[0]
 
         self.select_learn_alg_button = arcade.gui.UIFlatButton(
           color=arcade.color.DARK_BLUE_GRAY,
@@ -101,7 +102,7 @@ class MyGame(arcade.View):
             height=200,
             x=self.window.width / 2,
             y=self.window.height / 2)
-        self.run_game_button = self.run_game
+        self.run_game_button.on_click = self.run_game
 
         self.current_selected_options_text = arcade.gui.UITextArea(
             text=f"""
@@ -109,9 +110,10 @@ class MyGame(arcade.View):
             Current selected NN: {self.NN_to_use}
             """,
             font_size=12,
+            height=60
         )
 
-        self.v_box = arcade.gui.UIBoxLayout()
+        self.v_box = arcade.gui.UIBoxLayout(space_between=5)
         self.v_box.add(self.current_selected_options_text)
         self.v_box.add(self.select_learn_alg_button)
         self.v_box.add(self.select_NN_button)
@@ -128,7 +130,7 @@ class MyGame(arcade.View):
         self.manager_learning_alg = arcade.gui.UIManager()
         self.manager_learning_alg.disable()
 
-        self.v_box_learning_alg = arcade.gui.UIBoxLayout()
+        self.v_box_learning_alg = arcade.gui.UIBoxLayout(space_between=5)
 
         self.manager_learning_alg.add(
             arcade.gui.UIAnchorWidget(
@@ -141,7 +143,7 @@ class MyGame(arcade.View):
         self.manager_NN = arcade.gui.UIManager()
         self.manager_NN.disable()
 
-        self.v_box_NN = arcade.gui.UIBoxLayout()
+        self.v_box_NN = arcade.gui.UIBoxLayout(space_between=5)
 
         self.manager_NN.add(
             arcade.gui.UIAnchorWidget(
@@ -162,25 +164,29 @@ class MyGame(arcade.View):
         # Sprite lists setup
         self.player_list = arcade.SpriteList()
 
-        if self.LEARNING_METHOD == "Evolution":
+        if self.LEARNING_METHOD == "evolution":
             if self.NN_to_use != 'NONE':
                 self.learning_alg = Evolution_learning(self)
                 self.learning_alg.on_startup_with_model(NN_dir=self.NN_to_use)
             else:
                 self.learning_alg = Evolution_learning(self)
                 self.learning_alg.on_startup_init()
+        else:
+            print("No valid learning method selected")
 
-    def select_learning_algorithm(self):
+    def select_learning_algorithm(self, event):
         """
         Called when select learning algorithm button pressed
         Shows screen for selecting the learning algorithm
         :return:
         """
+        self.menu_setting = MENUS[1]
         self.manager_1.disable()
         self.manager_NN.disable()
         self.manager_learning_alg.enable()
 
         buttons = []
+        self.v_box_learning_alg.clear()
         for i, l_alg in enumerate(LEARNING_METHOD_Options):
             buttons.append(arcade.gui.UIFlatButton(
                 color=arcade.color.GRAPE,
@@ -188,7 +194,7 @@ class MyGame(arcade.View):
                 x=self.window.width / 2,
                 y=self.window.height / 2,
                 width=400,
-                height=self.window.height / LEARNING_METHOD_Options - 40))
+                height=self.window.height / len(LEARNING_METHOD_Options) - 40))
             buttons[i].on_click = self.l_alg_change
 
             self.v_box_learning_alg.add(buttons[i])
@@ -203,16 +209,17 @@ class MyGame(arcade.View):
             Current selected learning algorithm: {self.LEARNING_METHOD}
             Current selected NN: {self.NN_to_use}
             """
-        self.manager_1.enable()
+        self.menu_setting = MENUS[0]
         self.manager_learning_alg.disable()
+        self.manager_1.enable()
 
-
-    def select_new_NN_model(self):
+    def select_new_NN_model(self, event):
         """
         Called when select new NN button clicked
         Shows screen for selecting the new NN
         :return:
         """
+        self.menu_setting = MENUS[2]
         self.manager_1.disable()
         self.manager_NN.enable()
         self.manager_learning_alg.disable()
@@ -220,20 +227,30 @@ class MyGame(arcade.View):
         trained_nets = self.get_trained_nets()
 
         self.NN_option_text = arcade.gui.UITextArea(
-            text=f"""OPTIONS FOR NN for current selected learning method
+            text=f"""OPTIONS FOR NN for current selected learning method:
             NONE, {trained_nets}""",
-            font_size=8
+            font_size=20,
+            width=self.window.width - 30,
+            height=200
         )
         NN_selection = arcade.gui.UIInputText(
             text='Enter directory of NN',
-            font_size=14
+            font_size=14,
+            width=self.window.height - 30
         )
         submit_button = arcade.gui.UIFlatButton(
-            text='SUBMIT'
+            color=arcade.color.GRAPE,
+            text='SUBMIT',
+            x=self.window.width / 2,
+            y=self.window.width / 2,
+            width=70,
+            height=50
         )
         submit_button.on_click = self.submit_NN_name
 
-        self.v_box_NN = arcade.gui.UIBoxLayout()
+        print(trained_nets)
+
+        self.v_box_NN.clear()
         self.v_box_NN.add(self.NN_option_text)
         self.v_box_NN.add(NN_selection)
         self.v_box_NN.add(submit_button)
@@ -243,26 +260,28 @@ class MyGame(arcade.View):
         Gets the list of saved neural networs
         :return: saved_nets: list of directories of saved NNs
         """
-        saved_nets = glob.glob(f'models_{self.LEARNING_METHOD}/*')
+        saved_nets = glob.glob(f'../models_{self.LEARNING_METHOD}/*')
 
         return saved_nets
 
-    def submit_NN_name(self):
+    def submit_NN_name(self, event):
         """
         Called when submit button pressed to submit NN file name
         :return:
         """
         self.NN_to_use = f"{self.NN_option_text.text}"
+        self.menu_setting = MENUS[0]
         self.manager_NN.disable()
         self.manager_1.enable()
 
 
-    def run_game(self):
+    def run_game(self, event):
         """
         Called when run_game button pressed
         Runs the game with current selected learning algorithm and NN
         :return:
         """
+        self.menu_setting = None
         self.manager_1.disable()
         self.setup()
 
@@ -294,13 +313,20 @@ class MyGame(arcade.View):
         # This command has to happen before start drawing
         self.clear()
 
-        arcade.draw_text("press ESC to access menu", self.window.width - 90, self.window.height - 30,
-                         arcade.color.WHITE, font_size=10, anchor_x="center")
-        arcade.draw_text("press \ to select new learning algorithm or NN", self.window.width - 90, self.window.height - 30,
-                         arcade.color.WHITE, font_size=10, anchor_x="center")
-
         self.wall_list.draw()  # Draw the walls
 
+        arcade.draw_text("press ESC to access menu", self.window.width - 110, self.window.height - 30,
+                         arcade.color.WHITE, font_size=10, anchor_x="center")
+        arcade.draw_text("press \ to select new learning algorithm or NN", self.window.width - 110,
+                         self.window.height - 50, arcade.color.WHITE, font_size=10, anchor_x="center")
+
+        # Draw the UI managers
+        if self.menu_setting == MENUS[0]:
+            self.manager_1.draw()
+        elif self.menu_setting == MENUS[1]:
+            self.manager_learning_alg.draw()
+        elif self.menu_setting == MENUS[2]:
+            self.manager_NN.draw()
 
         # Draw the best players if there are any yet
         try:
@@ -343,7 +369,8 @@ class MyGame(arcade.View):
 
         if key == arcade.key.BACKSLASH:
             # Select new learning algorithm or NN
-            pass
+            self.menu_setting = MENUS[0]
+            self.manager_1.enable()
 
 
 # --------------------------------------------------------------------------------------
