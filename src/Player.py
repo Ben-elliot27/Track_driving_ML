@@ -12,7 +12,7 @@ from Ray import Ray
 from Wall import Wall
 
 
-
+MAX_ACCELERATION = 0.5
 
 class Player(arcade.Sprite):
 
@@ -23,7 +23,7 @@ class Player(arcade.Sprite):
         :return:
         """
         # Speed limit
-        self.MAX_SPEED = 3.0
+        self.MAX_SPEED = 2.0
 
         # How fast we accelerate
         self.ACCELERATION_RATE = 0.5
@@ -35,8 +35,10 @@ class Player(arcade.Sprite):
         self.FRICTION = 0.07
 
         # Initials for rays
-        self.RAY_COUNT = 8
-        self.RAY_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315]
+        self.RAY_COUNT = 12
+        self.RAY_ANGLES = []
+        for i in range(self.RAY_COUNT):
+            self.RAY_ANGLES.append(360/self.RAY_COUNT * i)
         self.RAY_OFFSET = 25
         self.RAY_DISTANCE = 10
         self.RAY_GAP = 10
@@ -54,6 +56,7 @@ class Player(arcade.Sprite):
         self.current_reward_sprite = self.reward_list[0]
         self.reward_distance = 10000
         self.reward_index = 0
+        self.reward_count = 0
 
         self.current_vel = 0
         self.isDead = False
@@ -62,7 +65,6 @@ class Player(arcade.Sprite):
         self.isActive = False
 
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
-        self.reward_list = arcade.SpriteList(use_spatial_hash=True)  # visible = False
 
         # Jammy way of getting the individual rays to work
         self.RAY_DELTA_X = np.zeros((self.RAY_DISTANCE, self.RAY_COUNT))
@@ -110,7 +112,6 @@ class Player(arcade.Sprite):
         """
         :return:
         """
-
         if self.isActive:
             if self.current_vel < self.MAX_SPEED:
                 self.current_vel += self.change_vel
@@ -182,6 +183,9 @@ class Player(arcade.Sprite):
         self.change_vel += move[0] * self.ACCELERATION_RATE
         self.change_vel -= move[3] * self.ACCELERATION_RATE
 
+        if self.change_vel > MAX_ACCELERATION:
+            self.change_vel = MAX_ACCELERATION
+
         self.angle += move[1] * self.TURNING_RATE
         self.angle -= move[2] * self.TURNING_RATE
 
@@ -241,3 +245,4 @@ class Player(arcade.Sprite):
         # Set up the rewards
         self.reward_index = 0
         self.current_reward_sprite = self.reward_list[0]
+        self.reward_count = 0

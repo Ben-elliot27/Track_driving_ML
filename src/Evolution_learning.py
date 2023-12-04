@@ -37,6 +37,8 @@ EPOCH_TIME = 10  # seconds // this is not currently based on the number of updat
 RATE = 1 / 30  # rate of increase of time simulated for
 RATE_RAND = 1 / 50  # rate of decrease of random noise
 
+INPUT_LEN = 12 + 3 # Num of rays + speed, angle, dist to nearest rewards
+
 
 class Evolution_learning():
 
@@ -58,7 +60,7 @@ class Evolution_learning():
 
         for player in self.game_window.player_list:
             # Create the NN
-            inputs = keras.Input(shape=(11,))
+            inputs = keras.Input(shape=(INPUT_LEN,))
             dense = keras.layers.Dense(50, activation='relu')(inputs)
             outputs = keras.layers.Dense(4)(dense)
             model = keras.Model(inputs=inputs, outputs=outputs)
@@ -121,7 +123,6 @@ class Evolution_learning():
         self.save_best_player()
         self.set_players_new_NN()
         self.reset_player()
-        print("5")
 
         t = Timer(EPOCH_TIME * (self.epochs ** RATE), self.on_cycle_end)
         t.start()
@@ -139,6 +140,9 @@ class Evolution_learning():
 
         best_list = sorted(self.game_window.player_list, key=lambda player: player.cost, reverse=True)[
                          0:NUM_BEST_PLAYERS]
+        # Save every 50 epochs
+        if self.epochs % 50 == 0:
+            self.save = True
 
         print(f"""Costs of players: {sorted(costs, reverse=True)}
         Players: {best_list}
@@ -178,7 +182,7 @@ class Evolution_learning():
             player.center_y = self.game_window.player_spawn_pos[1]
             player.angle = 0
             # reset reward positions
-            player.reset_reward_list() #broke
+            player.reset_reward_list()
 
         for player in self.game_window.player_list:
             player.isActive = True  # re-active player
@@ -187,6 +191,7 @@ class Evolution_learning():
         """
         Saves the model of the best player from the current run
         :return:
+        TODO: Need to fix this so user can input file name before
         """
         if self.save:
             self.best_players[0].model.save('../models_evolution/current_best.keras')

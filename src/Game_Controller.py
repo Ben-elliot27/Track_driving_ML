@@ -243,12 +243,10 @@ class MyGame(arcade.View):
             text='SUBMIT',
             x=self.window.width / 2,
             y=self.window.width / 2,
-            width=70,
+            width=100,
             height=50
         )
         submit_button.on_click = self.submit_NN_name
-
-        print(trained_nets)
 
         self.v_box_NN.clear()
         self.v_box_NN.add(self.NN_option_text)
@@ -261,6 +259,7 @@ class MyGame(arcade.View):
         :return: saved_nets: list of directories of saved NNs
         """
         saved_nets = glob.glob(f'../models_{self.LEARNING_METHOD}/*')
+        saved_nets = str(saved_nets).replace('\\\\', '/')
 
         return saved_nets
 
@@ -270,6 +269,10 @@ class MyGame(arcade.View):
         :return:
         """
         self.NN_to_use = f"{self.NN_option_text.text}"
+        self.current_selected_options_text.text = f"""
+            Current selected learning algorithm: {self.LEARNING_METHOD}
+            Current selected NN: {self.NN_to_use}
+            """
         self.menu_setting = MENUS[0]
         self.manager_NN.disable()
         self.manager_1.enable()
@@ -359,10 +362,10 @@ class MyGame(arcade.View):
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
-
-        # Save the current model
-        if key == arcade.key.S:
-            self.learning_alg.save = True
+        if not self.menu_setting:
+            # Save the current model
+            if key == arcade.key.S:
+                self.learning_alg.save = True
 
         if key == arcade.key.ESCAPE:
             self.window.show_view(self.Main_Menu)  # TODO: make it so that you can go to/from main menu without losing progress
