@@ -34,10 +34,10 @@ SIGMA = 3
 
 EPOCH_TIME = 10  # seconds // this is not currently based on the number of updates that happens, but could be in future
 
-RATE = 1 / 12  # rate of increase of time simulated for
-RATE_RAND = 1 / 50  # rate of decrease of random noise
+RATE = 1 / 8  # rate of increase of time simulated for
+RATE_RAND = 1 / 30  # rate of decrease of random noise
 
-INPUT_LEN = 12 + 3 # Num of rays + speed, angle, dist to nearest rewards
+INPUT_LEN = 12 + 3  # Num of rays + speed, angle, dist to nearest rewards
 
 
 class Evolution_learning():

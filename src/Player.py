@@ -12,7 +12,7 @@ from Ray import Ray
 from Wall import Wall
 
 
-MAX_ACCELERATION = 1.0
+MAX_ACCELERATION = 1.2
 
 class Player(arcade.Sprite):
 
@@ -23,7 +23,7 @@ class Player(arcade.Sprite):
         :return:
         """
         # Speed limit
-        self.MAX_SPEED = 2.5
+        self.MAX_SPEED = 7.0
 
         # How fast we accelerate
         self.ACCELERATION_RATE = 0.5
