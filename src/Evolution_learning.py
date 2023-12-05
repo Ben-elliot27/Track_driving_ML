@@ -23,8 +23,10 @@ TODO check reseeting of rewards worked
 
 from threading import Timer
 
+import arcade
 import numpy as np
-from tensorflow import keras
+import torch
+import torch.nn as nn
 
 NUM_BEST_PLAYERS = 4
 TOT_NUM_PLAYERS = NUM_BEST_PLAYERS + 20  # Best players also spawned
@@ -39,6 +41,17 @@ RATE_RAND = 1 / 30  # rate of decrease of random noise
 
 INPUT_LEN = 12 + 3  # Num of rays + speed, angle, dist to nearest rewards
 
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.layer_1 = nn.Linear(INPUT_LEN, 50, bias=False)
+        self.layer_2 = nn.Linear(50, 50, bias=False)
+        self.layer_3 = nn.Linear(50, 4, bias=False)
+    def forward(self, x):
+        x = nn.ReLU(self.layer_1(x))
+        x = nn.ReLU(self.layer_2(x))
+        x = self.layer_3(x)
+        return x
 
 class Evolution_learning():
 
@@ -47,6 +60,7 @@ class Evolution_learning():
         self.epochs = 0
         self.save = False
         self.NUM_BEST_PLAYERS = NUM_BEST_PLAYERS
+        self.best_players_to_draw = arcade.SpriteList()
 
     def on_startup_init(self):
         """
@@ -58,23 +72,25 @@ class Evolution_learning():
         for i in range(TOT_NUM_PLAYERS):
             self.game_window.spawn_player()
 
-        for player in self.game_window.player_list:
+        for a, player in enumerate(self.game_window.player_list):
             # Create the NN
-            inputs = keras.Input(shape=(INPUT_LEN,))
-            dense = keras.layers.Dense(50, activation='relu')(inputs)
-            outputs = keras.layers.Dense(4)(dense)
-            model = keras.Model(inputs=inputs, outputs=outputs)
-            model.compile(optimizer='Adam')
+            model = nn.Sequential(
+                nn.Linear(INPUT_LEN, 50, bias=False),
+                nn.ReLU(),
+                nn.Linear(50, 50, bias=False),
+                nn.ReLU(),
+                nn.Linear(50, 4, bias=False)
+            )
 
-            new_weights = []
+            with torch.no_grad():
+                for i in range(len(model)):
+                    if i % 2 == 0:
+                        multiplier_arr = SIGMA * RNG.standard_normal(size=model[i].weight.shape)
+                        model[i].weight = nn.Parameter(model[i].weight + multiplier_arr)
 
-            # Give each NN a random deviation at the start
-            for weights in model.get_weights():
-                new_weights.append(
-                    weights + SIGMA * RNG.standard_normal(size=weights.shape)
-                )
-            model.set_weights(new_weights)
-            player.model = model
+                player.model = model
+            if a < NUM_BEST_PLAYERS:
+                self.best_players_to_draw.append(player)
 
         for player in self.game_window.player_list:
             player.isActive = True
@@ -88,29 +104,39 @@ class Evolution_learning():
         Also start timer on how long it should run for (separate thread)
         :param NN_dir :str: directory for the NN to be loaded
         :return:
+        TODO: fix for pytorch not tensorflow
         """
 
         for i in range(TOT_NUM_PLAYERS):
             self.game_window.spawn_player()
 
-        for player in self.game_window.player_list:
+        loaded_model = torch.load(NN_dir)
+        print(loaded_model)
 
-            model = keras.models.load_model(NN_dir)
+        for i, player in enumerate(self.game_window.player_list):
+            player.model = nn.Sequential(
+                nn.Linear(INPUT_LEN, 50, bias=False),
+                nn.ReLU(),
+                nn.Linear(50, 50, bias=False),
+                nn.ReLU(),
+                nn.Linear(50, 4, bias=False)
+            )
 
-            new_weights = []
-
-            # Give each NN a random deviation at the start
-            for weights in model.get_weights():
-                new_weights.append(
-                    weights + SIGMA * RNG.standard_normal(size=weights.shape)
-                )
-            model.set_weights(new_weights)
-            player.model = model
+            if i >= NUM_BEST_PLAYERS:
+                with torch.no_grad():
+                    for a in range(len(loaded_model)):
+                        if a % 2 == 0:
+                            mult_arr = SIGMA * RNG.standard_normal(
+                                size=loaded_model[a].weight.shape)
+                            player.model[a] = nn.Parameter(loaded_model[a].weight + mult_arr)
+            else:
+                player.model = loaded_model
 
         for player in self.game_window.player_list:
             player.isActive = True
-        t = Timer(EPOCH_TIME, self.on_cycle_end)
-        t.start()
+        if self.game_window.menu_setting == None:
+            t = Timer(EPOCH_TIME, self.on_cycle_end)
+            t.start()
 
     def on_cycle_end(self):
         """
@@ -160,16 +186,23 @@ class Evolution_learning():
 
         for i, player in enumerate(self.game_window.player_list):
 
-            new_weights = []
-            for weights in self.best_players[i % NUM_BEST_PLAYERS].model.get_weights():
-                if i < NUM_BEST_PLAYERS:
-                    new_weights.append(weights)
-                else:
-                    new_weights.append(
-                        weights + (SIGMA / (self.epochs ** RATE_RAND)) * RNG.standard_normal(size=weights.shape)
-                    )
+            if i >= NUM_BEST_PLAYERS:
+                with torch.no_grad():
+                    best_player = self.best_players[i % NUM_BEST_PLAYERS]
+                    for a in range(len(best_player.model)):
+                        if a % 2 == 0:
+                            mult_arr = (SIGMA / (self.epochs ** RATE_RAND)) * RNG.standard_normal(
+                                size=best_player.model[a].weight.shape)
+                            player.model[a].weight = nn.Parameter(best_player.model[a].weight + mult_arr)
+            else:
+                with torch.no_grad():
+                    best_player = self.best_players[i % NUM_BEST_PLAYERS]
+                    for a in range(len(best_player.model)):
+                        if a % 2 == 0:
+                            player.model[a].weight = nn.Parameter(best_player.model[a].weight)
+                    self.best_players_to_draw[i] = player
 
-            player.model.set_weights(new_weights)
+
 
     def reset_player(self):
         """
@@ -187,13 +220,14 @@ class Evolution_learning():
         for player in self.game_window.player_list:
             player.isActive = True  # re-active player
 
-    def save_best_player(self):
+    def save_best_player(self, path='../models_evolution/current_best'):
         """
         Saves the model of the best player from the current run
         :return:
         TODO: Need to fix this so user can input file name before
         """
         if self.save:
-            self.best_players[0].model.save('../models_evolution/current_best.keras')
+            torch.save(self.best_players_to_draw[0].model, path)
+
             print("Model saved")
             self.save = False

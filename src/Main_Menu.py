@@ -255,14 +255,6 @@ class Main_menu(arcade.View):
         self.current_selected_track = track
         self.track_dt = [self.wall_list, self.reward_list, self.player_spawn_pos]
 
-
-
-
-
-
-
-
-
     def on_hide_view(self):
         """
         Called when view is hidden
@@ -270,12 +262,6 @@ class Main_menu(arcade.View):
         """
         self.manager_1.disable()
         self.manager_2.disable()
-
-
-
-
-
-
 
 
 

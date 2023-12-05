@@ -6,13 +6,14 @@ The player class for the game
 import arcade
 import math
 import numpy as np
-import tensorflow as tf
+import torch
 
 from Ray import Ray
 from Wall import Wall
 
 
 MAX_ACCELERATION = 1.2
+MAX_SPEED = 8.0
 
 class Player(arcade.Sprite):
 
@@ -22,17 +23,12 @@ class Player(arcade.Sprite):
         Sets contants used by player as well
         :return:
         """
-        # Speed limit
-        self.MAX_SPEED = 7.0
-
-        # How fast we accelerate
-        self.ACCELERATION_RATE = 0.5
 
         # How fast the car turns
         self.TURNING_RATE = 3
 
         # How fast to slow down after we let off the key
-        self.FRICTION = 0.07
+        self.FRICTION = 0.08
 
         # Initials for rays
         self.RAY_COUNT = 12
@@ -83,7 +79,7 @@ class Player(arcade.Sprite):
         # Set up cost
         self.cost = 0
 
-        self.NN_inputs = np.array([self.current_vel / self.MAX_SPEED, self.angle / 360,
+        self.NN_inputs = np.array([self.current_vel / MAX_SPEED, self.angle / 360,
                                    self.reward_distance / 100].append(np.array(self.ray_distance) / 10))
         # ray distance normalising needs working on
 
@@ -113,10 +109,10 @@ class Player(arcade.Sprite):
         :return:
         """
         if self.isActive:
-            if self.current_vel < self.MAX_SPEED:
+            if self.current_vel < MAX_SPEED:
                 self.current_vel += self.change_vel
-            elif self.current_vel >= self.MAX_SPEED:
-                self.current_vel = self.MAX_SPEED
+            elif self.current_vel >= MAX_SPEED:
+                self.current_vel = MAX_SPEED
 
             # Add some friction
             if self.current_vel > self.FRICTION:
@@ -173,37 +169,19 @@ class Player(arcade.Sprite):
 
     def AI_movement(self):
 
-        list = [self.current_vel / self.MAX_SPEED, self.angle / 360, self.reward_distance / 1000]
+        nn_list = [self.current_vel / MAX_SPEED, self.angle / 360, self.reward_distance / 1000]
         for dist in self.ray_distance:
-            list.append(dist / 10)
-        self.NN_inputs = list
-        pred = self.model(np.array([self.NN_inputs]), training=False)  # ----
-        move = tf.nn.softmax(pred).numpy()[0]
+            nn_list.append(dist / 10)
+        self.NN_inputs = nn_list
+        pred = self.model(torch.tensor(self.NN_inputs, dtype=torch.float64))
+        move = torch.softmax(pred, dim=0)
+        move = move.detach().numpy()
 
-        self.change_vel += move[0] * self.ACCELERATION_RATE
-        self.change_vel -= move[3] * self.ACCELERATION_RATE
-
-        if self.change_vel > MAX_ACCELERATION:
-            self.change_vel = MAX_ACCELERATION
+        self.change_vel = move[0] * MAX_ACCELERATION
+        self.change_vel = move[3] * MAX_ACCELERATION
 
         self.angle += move[1] * self.TURNING_RATE
         self.angle -= move[2] * self.TURNING_RATE
-
-    def player_movement(self, direction):
-        """ Handles player movement
-         input: [UP, LEFT, RIGHT, DOWN]
-         ie [1, 0, 0, 0] is UP"""
-
-        input = direction
-        self.change_vel = 0
-
-        # Apply acceleration based on the keys pressed
-        if input[0] == 1:
-            self.change_vel += self.ACCELERATION_RATE
-        if input[1] == 1 and input[2] != 1:
-            self.angle += self.TURNING_RATE
-        elif input[2] == 1 and input[1] != 1:
-            self.angle += -self.TURNING_RATE
 
     def collision_with_wall(self, wall_list):
         # Generate a list of all walls that collided with the player.

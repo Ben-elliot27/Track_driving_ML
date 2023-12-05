@@ -13,9 +13,6 @@ import arcade
 
 from Evolution_learning import Evolution_learning
 from Player import Player
-from Wall import Wall
-import pickle
-from Draw_track import Draw_track
 import arcade.gui
 import glob
 
@@ -23,9 +20,7 @@ import glob
 LEARNING_METHOD_Options = ["evolution"]
 FRAME_RATE = 1 / 20  # 20 fps
 
-UPDATE_FREQ = 3  # Frames per NN ran to get new movement
-
-
+UPDATE_FREQ = 2  # Frames per NN ran to get new movement
 
 MENUS = ['main_menu', 'alg_selector', 'NN_selector']
 
@@ -336,17 +331,12 @@ class MyGame(arcade.View):
         elif self.menu_setting == MENUS[2]:
             self.manager_NN.draw()
 
-        # Draw the best players if there are any yet
-        try:
-            for player in self.learning_alg.best_players:
-                player.draw()
-                if self.show_ray_reward_toggle:
+        if self.menu_setting == None:
+            self.learning_alg.best_players_to_draw.draw()
+            if self.show_ray_reward_toggle:
+                for player in self.learning_alg.best_players_to_draw:
                     player.ray_list.draw()
                     player.current_reward_sprite.draw()
-        except:
-            # No best_player list yet
-            for player in self.player_list[0:2]:
-                player.draw()
 
     def on_update(self, delta_time):
         """
@@ -356,15 +346,18 @@ class MyGame(arcade.View):
         """
         self.player_list.update()  # Updates player movement
 
-        # Updates player movement via NN every UDPATE_FREQ frames
-        if self.update_freq_count >= UPDATE_FREQ:
-            for player in self.player_list:
-                player.update_ray_hit_list(self.wall_list)
-                player.collision_with_wall(self.wall_list)
-                player.AI_movement()
-                self.update_freq_count = 0
+        if self.menu_setting:
+            pass
         else:
-            self.update_freq_count += 1
+            # Updates player movement via NN every UDPATE_FREQ frames
+            if self.update_freq_count >= UPDATE_FREQ:
+                for player in self.player_list:
+                    player.update_ray_hit_list(self.wall_list)
+                    player.collision_with_wall(self.wall_list)
+                    player.AI_movement()
+                    self.update_freq_count = 0
+            else:
+                self.update_freq_count += 1
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
@@ -382,6 +375,16 @@ class MyGame(arcade.View):
             # Select new learning algorithm or NN
             self.menu_setting = MENUS[0]
             self.manager_1.enable()
+
+    def on_hide_view(self):
+        """
+        called when view closed
+        :return:
+        """
+        self.manager_1.disable()
+        self.manager_NN.disable()
+        self.manager_learning_alg.disable()
+        self.menu_setting = MENUS[0]
 
 
 # --------------------------------------------------------------------------------------
