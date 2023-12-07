@@ -6,6 +6,7 @@ implemented 'dodgily' as a series of individual objects.
 
 TODO: add loading of a previous model to a UI element + loading of track
 TODO: make it so you can leave the game view and go back to main menu
+TODO: add ability to press a key and bring up save option so can change save name mid run
 
 """
 
@@ -15,6 +16,7 @@ from Evolution_learning import Evolution_learning
 from Player import Player
 import arcade.gui
 import glob
+import torch
 
 
 LEARNING_METHOD_Options = ["evolution"]
@@ -22,7 +24,7 @@ FRAME_RATE = 1 / 20  # 20 fps
 
 UPDATE_FREQ = 2  # Frames per NN ran to get new movement
 
-MENUS = ['main_menu', 'alg_selector', 'NN_selector']
+MENUS = ['main_menu', 'alg_selector', 'NN_selector', 'file_name_selector']
 
 
 class MyGame(arcade.View):
@@ -67,9 +69,12 @@ class MyGame(arcade.View):
 
         self.show_ray_reward_toggle = True
 
+        self.selected_file_path = '../models_evolution/current_best'
+        self.save_every_x_epochs = None
+
         # --------------------------------------------- GUI ------------------------------------------------------------
 
-        # SCREEN 1
+        # SCREEN 1 -- main_menu
         self.manager_1 = arcade.gui.UIManager()
         self.manager_1.enable()
         self.menu_setting = MENUS[0]
@@ -101,10 +106,20 @@ class MyGame(arcade.View):
             y=self.window.height / 2)
         self.run_game_button.on_click = self.run_game
 
+        self.save_name_button = arcade.gui.UIFlatButton(
+            color=arcade.color.DARK_BLUE_GRAY,
+            text='Choose file name to save model to',
+            width=400,
+            height=200,
+            x=self.window.width / 2,
+            y=self.window.height / 2)
+        self.save_name_button.on_click = self.save_file_name
+
         self.current_selected_options_text = arcade.gui.UITextArea(
             text=f"""
             Current selected learning algorithm: {self.LEARNING_METHOD}
             Current selected NN: {self.NN_to_use}
+            Current save file path: {self.selected_file_path}
             """,
             font_size=12,
             height=100,
@@ -115,6 +130,7 @@ class MyGame(arcade.View):
         self.v_box.add(self.current_selected_options_text)
         self.v_box.add(self.select_learn_alg_button)
         self.v_box.add(self.select_NN_button)
+        self.v_box.add(self.save_name_button)
         self.v_box.add(self.run_game_button)
 
         self.manager_1.add(
@@ -124,7 +140,7 @@ class MyGame(arcade.View):
                 child=self.v_box)
         )
 
-        # SCREEN 2
+        # SCREEN 2 -- alg_selector
         self.manager_learning_alg = arcade.gui.UIManager()
         self.manager_learning_alg.disable()
 
@@ -137,7 +153,7 @@ class MyGame(arcade.View):
                 child=self.v_box_learning_alg)
         )
 
-        # SCREEN 3
+        # SCREEN 3 -- NN_selector
         self.manager_NN = arcade.gui.UIManager()
         self.manager_NN.disable()
 
@@ -148,6 +164,30 @@ class MyGame(arcade.View):
                 anchor_x="center_x",
                 anchor_y="center_y",
                 child=self.v_box_NN)
+        )
+
+        # SCREEN 4 -- file_name_selector
+        self.manager_save_name = arcade.gui.UIManager()
+        self.manager_save_name.disable()
+
+        self.save_name_selection = arcade.gui.UIInputText(
+            text='None',
+            font_size=14,
+            width=self.window.height/2
+        )
+        self.repeat_amount_selection = arcade.gui.UIInputText(
+            text="Enter how many epochs per save (None for don't)",
+            font_size=14,
+            width=self.window.height/2
+        )
+
+        self.v_box_save_name = arcade.gui.UIBoxLayout(space_between=5)
+
+        self.manager_NN.add(
+            arcade.gui.UIAnchorWidget(
+                anchor_x="center_x",
+                anchor_y="center_y",
+                child=self.v_box_save_name)
         )
 
     def on_show_view(self):
@@ -206,6 +246,7 @@ class MyGame(arcade.View):
         self.current_selected_options_text.text = f"""
             Current selected learning algorithm: {self.LEARNING_METHOD}
             Current selected NN: {self.NN_to_use}
+            Current save file path: {self.selected_file_path}
             """
         self.menu_setting = MENUS[0]
         self.manager_learning_alg.disable()
@@ -253,7 +294,7 @@ class MyGame(arcade.View):
 
     def get_trained_nets(self):
         """
-        Gets the list of saved neural networs
+        Gets the list of saved neural networks
         :return: saved_nets: list of directories of saved NNs
         """
         saved_nets = glob.glob(f'../models_{self.LEARNING_METHOD}/*')
@@ -267,13 +308,59 @@ class MyGame(arcade.View):
         :return:
         """
         self.NN_to_use = f"{self.NN_selection.text}"
+        self.selected_file_path = f"{self.save_name_selection.text}"
+        try:
+            self.save_every_x_epochs = int(self.repeat_amount_selection.text)
+        except ValueError:
+            # NaN
+            pass
         self.current_selected_options_text.text = f"""
             Current selected learning algorithm: {self.LEARNING_METHOD}
             Current selected NN: {self.NN_to_use}
+            Current save file path: {self.selected_file_path}
             """
         self.menu_setting = MENUS[0]
         self.manager_NN.disable()
+        self.manager_save_name.disable()
         self.manager_1.enable()
+
+    def save_file_name(self):
+        """
+        Called when save file to new name button pressed
+        Handles the file name to save the neural network to and if there are any
+        :return:
+        """
+        self.menu_setting = MENUS[3]
+        self.manager_1.disable()
+        self.manager_NN.disable()
+        self.manager_save_name.enable()
+        self.manager_learning_alg.disable()
+
+
+        self.save_name_selection = arcade.gui.UIInputText(
+            text='Enter file name for model (default: None)',
+            font_size=14,
+            width=self.window.height/2
+        )
+        self.repeat_amount_selection = arcade.gui.UIInputText(
+            text="Enter how many epochs per save (None for don't)",
+            font_size=14,
+            width=self.window.height/2
+        )
+        submit_button = arcade.gui.UIFlatButton(
+            color=arcade.color.GRAPE,
+            text='SUBMIT',
+            x=self.window.width / 2,
+            y=self.window.width / 2,
+            width=100,
+            height=50
+        )
+        submit_button.on_click = self.submit_NN_name
+
+        self.v_box_NN.clear()
+        self.v_box_NN.add(self.NN_option_text)
+        self.v_box_NN.add(self.NN_selection)
+        self.v_box_NN.add(submit_button)
 
 
     def run_game(self, event):
@@ -364,7 +451,7 @@ class MyGame(arcade.View):
         if not self.menu_setting:
             # Save the current model
             if key == arcade.key.S:
-                self.learning_alg.save = True
+                self.save_best_player()
             if key == arcade.key.T:
                 self.show_ray_reward_toggle = not self.show_ray_reward_toggle
 
@@ -375,6 +462,16 @@ class MyGame(arcade.View):
             # Select new learning algorithm or NN
             self.menu_setting = MENUS[0]
             self.manager_1.enable()
+
+    def save_best_player(self, path='../models_evolution/current_best'):
+        """
+        Saves the model of the best player from the current run
+        :return:
+        TODO: Need to fix this so user can input file name before
+        """
+        torch.save(self.learning_alg.best_players_to_draw[0].model, path)
+
+        print("Model saved")
 
     def on_hide_view(self):
         """

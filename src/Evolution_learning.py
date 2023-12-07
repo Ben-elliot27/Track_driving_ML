@@ -16,9 +16,9 @@ EPOCH_TIME * (number of cycles)**(RATE)
 
 FUTURE ALG
 https://medium.com/@evertongomede/neuroevolution-of-augmenting-topologies-neat-innovating-neural-network-architecture-evolution-bc5508527252
-TODO Make a better track
+
 TODO make a better way of saving the best player & don't a;ways overwrite
-TODO check reseeting of rewards worked
+
 """
 
 from threading import Timer
@@ -41,17 +41,24 @@ RATE_RAND = 1 / 30  # rate of decrease of random noise
 
 INPUT_LEN = 12 + 3  # Num of rays + speed, angle, dist to nearest rewards
 
+
 class Net(nn.Module):
+    """
+    Neural Network class
+    """
     def __init__(self):
         super(Net, self).__init__()
-        self.layer_1 = nn.Linear(INPUT_LEN, 50, bias=False)
-        self.layer_2 = nn.Linear(50, 50, bias=False)
-        self.layer_3 = nn.Linear(50, 4, bias=False)
+        self.linear_relu = nn.Sequential(
+            nn.Linear(INPUT_LEN, 25, bias=False),
+            nn.ReLU(),
+            nn.Linear(10, 10, bias=False),
+            nn.ReLU(),
+            nn.Linear(10, 4, bias=False)
+        )
+
     def forward(self, x):
-        x = nn.ReLU(self.layer_1(x))
-        x = nn.ReLU(self.layer_2(x))
-        x = self.layer_3(x)
-        return x
+        return self.linear_relu(x)
+
 
 class Evolution_learning():
 
@@ -74,13 +81,7 @@ class Evolution_learning():
 
         for a, player in enumerate(self.game_window.player_list):
             # Create the NN
-            model = nn.Sequential(
-                nn.Linear(INPUT_LEN, 50, bias=False),
-                nn.ReLU(),
-                nn.Linear(50, 50, bias=False),
-                nn.ReLU(),
-                nn.Linear(50, 4, bias=False)
-            )
+            model = Net().linear_relu.double()
 
             with torch.no_grad():
                 for i in range(len(model)):
@@ -104,23 +105,15 @@ class Evolution_learning():
         Also start timer on how long it should run for (separate thread)
         :param NN_dir :str: directory for the NN to be loaded
         :return:
-        TODO: fix for pytorch not tensorflow
         """
 
         for i in range(TOT_NUM_PLAYERS):
             self.game_window.spawn_player()
 
-        loaded_model = torch.load(NN_dir)
-        print(loaded_model)
+        loaded_model = torch.load(NN_dir).double()
 
         for i, player in enumerate(self.game_window.player_list):
-            player.model = nn.Sequential(
-                nn.Linear(INPUT_LEN, 50, bias=False),
-                nn.ReLU(),
-                nn.Linear(50, 50, bias=False),
-                nn.ReLU(),
-                nn.Linear(50, 4, bias=False)
-            )
+            player.model = Net().linear_relu.double()
 
             if i >= NUM_BEST_PLAYERS:
                 with torch.no_grad():
@@ -128,13 +121,14 @@ class Evolution_learning():
                         if a % 2 == 0:
                             mult_arr = SIGMA * RNG.standard_normal(
                                 size=loaded_model[a].weight.shape)
-                            player.model[a] = nn.Parameter(loaded_model[a].weight + mult_arr)
+                            player.model[a].weight = nn.Parameter(loaded_model[a].weight + mult_arr)
             else:
                 player.model = loaded_model
+                self.best_players_to_draw.append(player)
 
         for player in self.game_window.player_list:
             player.isActive = True
-        if self.game_window.menu_setting == None:
+        if self.game_window.menu_setting is None:
             t = Timer(EPOCH_TIME, self.on_cycle_end)
             t.start()
 
@@ -146,16 +140,18 @@ class Evolution_learning():
         """
         self.epochs += 1
         self.best_players = self.pick_best_players()
-        self.save_best_player()
         self.set_players_new_NN()
         self.reset_player()
+
+        if self.epochs % 30 == 0:
+            self.game_window.save_best_player()
 
         t = Timer(EPOCH_TIME * (self.epochs ** RATE), self.on_cycle_end)
         t.start()
 
     def pick_best_players(self):
         """
-        Picks the highest 3 scoring players from the last run and print their informaton
+        Picks the highest 3 scoring players from the last run and print their information
         Also deactivates all players, so they don't carry on moving
         :return: best_players: list of player arcade objects
         """
@@ -166,9 +162,6 @@ class Evolution_learning():
 
         best_list = sorted(self.game_window.player_list, key=lambda player: player.cost, reverse=True)[
                          0:NUM_BEST_PLAYERS]
-        # Save every 50 epochs
-        if self.epochs % 50 == 0:
-            self.save = True
 
         print(f"""Costs of players: {sorted(costs, reverse=True)}
         Players: {best_list}
@@ -220,14 +213,4 @@ class Evolution_learning():
         for player in self.game_window.player_list:
             player.isActive = True  # re-active player
 
-    def save_best_player(self, path='../models_evolution/current_best'):
-        """
-        Saves the model of the best player from the current run
-        :return:
-        TODO: Need to fix this so user can input file name before
-        """
-        if self.save:
-            torch.save(self.best_players_to_draw[0].model, path)
 
-            print("Model saved")
-            self.save = False
