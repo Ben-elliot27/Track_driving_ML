@@ -17,8 +17,6 @@ EPOCH_TIME * (number of cycles)**(RATE)
 FUTURE ALG
 https://medium.com/@evertongomede/neuroevolution-of-augmenting-topologies-neat-innovating-neural-network-architecture-evolution-bc5508527252
 
-TODO make a better way of saving the best player & don't a;ways overwrite
-
 """
 
 from threading import Timer
@@ -31,7 +29,7 @@ import torch.nn as nn
 NUM_BEST_PLAYERS = 4
 TOT_NUM_PLAYERS = NUM_BEST_PLAYERS + 20  # Best players also spawned
 
-RNG = np.random.default_rng(seed=82) # Uses numpy random generator
+RNG = np.random.default_rng(seed=82)  # Uses numpy random generator
 SIGMA = 3
 
 EPOCH_TIME = 10  # seconds // this is not currently based on the number of updates that happens, but could be in future
@@ -51,7 +49,7 @@ class Net(nn.Module):
         self.linear_relu = nn.Sequential(
             nn.Linear(INPUT_LEN, 25, bias=False),
             nn.ReLU(),
-            nn.Linear(10, 10, bias=False),
+            nn.Linear(25, 10, bias=False),
             nn.ReLU(),
             nn.Linear(10, 4, bias=False)
         )
@@ -62,12 +60,13 @@ class Net(nn.Module):
 
 class Evolution_learning():
 
-    def __init__(self, game_window):
+    def __init__(self, game_window, update_freq=None):
         self.game_window = game_window
         self.epochs = 0
         self.save = False
         self.NUM_BEST_PLAYERS = NUM_BEST_PLAYERS
         self.best_players_to_draw = arcade.SpriteList()
+        self.epochs_to_save = update_freq
 
     def on_startup_init(self):
         """
@@ -143,8 +142,9 @@ class Evolution_learning():
         self.set_players_new_NN()
         self.reset_player()
 
-        if self.epochs % 30 == 0:
-            self.game_window.save_best_player()
+        if self.epochs_to_save:
+            if self.epochs % self.epochs_to_save == 0:
+                self.game_window.save_best_player(epochs=self.epochs_to_save)
 
         t = Timer(EPOCH_TIME * (self.epochs ** RATE), self.on_cycle_end)
         t.start()

@@ -7,7 +7,6 @@ implemented 'dodgily' as a series of individual objects.
 TODO: add loading of a previous model to a UI element + loading of track
 TODO: make it so you can leave the game view and go back to main menu
 TODO: add ability to press a key and bring up save option so can change save name mid run
-
 """
 
 import arcade
@@ -83,7 +82,7 @@ class MyGame(arcade.View):
           color=arcade.color.DARK_BLUE_GRAY,
           text='Select learning algorithm',
           width=400,
-          height=200,
+          height=150,
           x=self.window.width/2,
           y=self.window.height/2)
         self.select_learn_alg_button.on_click = self.select_learning_algorithm
@@ -92,7 +91,7 @@ class MyGame(arcade.View):
           color=arcade.color.DARK_BLUE_GRAY,
           text='Select NN',
           width=400,
-          height=200,
+          height=150,
           x=self.window.width/2,
           y=self.window.height/2)
         self.select_NN_button.on_click = self.select_new_NN_model
@@ -101,7 +100,7 @@ class MyGame(arcade.View):
             color=arcade.color.DARK_BLUE_GRAY,
             text='Run game with current selected options',
             width=400,
-            height=200,
+            height=150,
             x=self.window.width / 2,
             y=self.window.height / 2)
         self.run_game_button.on_click = self.run_game
@@ -110,7 +109,7 @@ class MyGame(arcade.View):
             color=arcade.color.DARK_BLUE_GRAY,
             text='Choose file name to save model to',
             width=400,
-            height=200,
+            height=150,
             x=self.window.width / 2,
             y=self.window.height / 2)
         self.save_name_button.on_click = self.save_file_name
@@ -122,7 +121,7 @@ class MyGame(arcade.View):
             Current save file path: {self.selected_file_path}
             """,
             font_size=12,
-            height=100,
+            height=150,
             width=self.window.width - 200
         )
 
@@ -157,6 +156,18 @@ class MyGame(arcade.View):
         self.manager_NN = arcade.gui.UIManager()
         self.manager_NN.disable()
 
+        self.NN_option_text = arcade.gui.UITextArea(
+            text=f"""NONE""",
+            font_size=12,
+            width=self.window.width - 30,
+            height=300
+        )
+        self.NN_selection = arcade.gui.UIInputText(
+            text='NONE',
+            font_size=14,
+            width=self.window.height - 30
+        )
+
         self.v_box_NN = arcade.gui.UIBoxLayout(space_between=5)
 
         self.manager_NN.add(
@@ -183,7 +194,7 @@ class MyGame(arcade.View):
 
         self.v_box_save_name = arcade.gui.UIBoxLayout(space_between=5)
 
-        self.manager_NN.add(
+        self.manager_save_name.add(
             arcade.gui.UIAnchorWidget(
                 anchor_x="center_x",
                 anchor_y="center_y",
@@ -352,16 +363,15 @@ class MyGame(arcade.View):
             text='SUBMIT',
             x=self.window.width / 2,
             y=self.window.width / 2,
-            width=100,
+            width=80,
             height=50
         )
         submit_button.on_click = self.submit_NN_name
 
-        self.v_box_NN.clear()
-        self.v_box_NN.add(self.NN_option_text)
-        self.v_box_NN.add(self.NN_selection)
-        self.v_box_NN.add(submit_button)
-
+        self.v_box_save_name.clear()
+        self.v_box_save_name.add(self.NN_option_text)
+        self.v_box_save_name.add(self.NN_selection)
+        self.v_box_save_name.add(submit_button)
 
     def run_game(self, event):
         """
@@ -372,7 +382,6 @@ class MyGame(arcade.View):
         self.menu_setting = None
         self.manager_1.disable()
         self.setup()
-
 
     def spawn_player(self):
         """
@@ -409,6 +418,8 @@ class MyGame(arcade.View):
                          self.window.height - 50, arcade.color.WHITE, font_size=10, anchor_x="center")
         arcade.draw_text("press t to toggle showing rays", self.window.width - 110,
                          self.window.height - 70, arcade.color.WHITE, font_size=10, anchor_x="center")
+        arcade.draw_text("press c to change save name of model", self.window.width - 110,
+                         self.window.height - 90, arcade.color.WHITE, font_size=10, anchor_x="center")
 
         # Draw the UI managers
         if self.menu_setting == MENUS[0]:
@@ -417,6 +428,8 @@ class MyGame(arcade.View):
             self.manager_learning_alg.draw()
         elif self.menu_setting == MENUS[2]:
             self.manager_NN.draw()
+        elif self.menu_setting == MENUS[3]:
+            self.manager_save_name.draw()
 
         if self.menu_setting == None:
             self.learning_alg.best_players_to_draw.draw()
@@ -424,6 +437,9 @@ class MyGame(arcade.View):
                 for player in self.learning_alg.best_players_to_draw:
                     player.ray_list.draw()
                     player.current_reward_sprite.draw()
+            if self.menu_setting == MENUS[3]:
+                arcade.draw_text("press c to return to game", self.window.width - 110, self.window.height - 30,
+                                 arcade.color.WHITE, font_size=10, anchor_x="center")
 
     def on_update(self, delta_time):
         """
@@ -448,28 +464,34 @@ class MyGame(arcade.View):
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
+        print(key, modifiers)
         if not self.menu_setting:
             # Save the current model
             if key == arcade.key.S:
                 self.save_best_player()
-            if key == arcade.key.T:
+            elif key == arcade.key.T:
                 self.show_ray_reward_toggle = not self.show_ray_reward_toggle
+            elif key == arcade.key.C:
+                # SHOW SAVE MENU
+                if not self.menu_setting:
+                    self.menu_setting = MENUS[3]
+                else:
+                    self.menu_setting = None
 
         if key == arcade.key.ESCAPE:
-            self.window.show_view(self.Main_Menu)  # TODO: make it so that you can go to/from main menu without losing progress
+            self.window.show_view(self.Main_Menu)
 
         if key == arcade.key.BACKSLASH:
             # Select new learning algorithm or NN
             self.menu_setting = MENUS[0]
             self.manager_1.enable()
 
-    def save_best_player(self, path='../models_evolution/current_best'):
+    def save_best_player(self, epochs=''):
         """
         Saves the model of the best player from the current run
         :return:
-        TODO: Need to fix this so user can input file name before
         """
-        torch.save(self.learning_alg.best_players_to_draw[0].model, path)
+        torch.save(self.learning_alg.best_players_to_draw[0].model, f"{self.selected_file_path}_{epochs}")
 
         print("Model saved")
 
