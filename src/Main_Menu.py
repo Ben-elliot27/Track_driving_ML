@@ -9,9 +9,9 @@ Shows currently selected track
 Want to be able to display currently selected track
 and have ability to change loaded track
 
-TODO: Add functionality for when run game button pressed
+TODO: fix arcade.gui package
 TODO: Add dropdown for different tracks
-TODO: Need to make it so that when a new track is selected it actually drawns the new track in background
+
 TODO: Add ability to delete a saved track
 TODO: Add selection for learning alg
 

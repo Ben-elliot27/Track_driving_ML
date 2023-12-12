@@ -6,10 +6,12 @@ implemented 'dodgily' as a series of individual objects.
 
 TODO: add loading of a previous model to a UI element + loading of track
 TODO: make it so you can leave the game view and go back to main menu
-TODO: add ability to press a key and bring up save option so can change save name mid run
+
+
 """
 
 import arcade
+import threading
 
 from Evolution_learning import Evolution_learning
 from Player import Player
@@ -448,7 +450,7 @@ class MyGame(arcade.View):
         :return:
         """
         self.player_list.update()  # Updates player movement
-
+        print(delta_time)
         if self.menu_setting:
             pass
         else:
@@ -458,7 +460,7 @@ class MyGame(arcade.View):
                     player.update_ray_hit_list(self.wall_list)
                     player.collision_with_wall(self.wall_list)
                     player.AI_movement()
-                    self.update_freq_count = 0
+                self.update_freq_count = 0
             else:
                 self.update_freq_count += 1
 
