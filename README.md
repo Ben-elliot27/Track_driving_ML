@@ -28,11 +28,19 @@ This repository contains a Python arcade application that allows users to create
 
 - **Track Creation and Menu Navigation**:
 
-https://github.com/user-attachments/assets/c91fbca5-79b4-4bed-912c-9ce2fab74f5a
+
+
+https://github.com/user-attachments/assets/6a946895-74b7-4605-89a2-9726424896a8
+
+
 
 - **Running the Evolution Simulation**:
 
-https://github.com/user-attachments/assets/7afb17c3-ba17-4cb5-a788-c4fe64e78499
+
+
+https://github.com/user-attachments/assets/17922e22-54e6-44cf-9e82-bc92d4ed71d2
+
+
 
 ## Code Structure
 
