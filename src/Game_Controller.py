@@ -337,7 +337,7 @@ class MyGame(arcade.View):
         self.manager_save_name.disable()
         self.manager_1.enable()
 
-    def save_file_name(self):
+    def save_file_name(self, event):
         """
         Called when save file to new name button pressed
         Handles the file name to save the neural network to and if there are any

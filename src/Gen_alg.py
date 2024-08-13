@@ -54,6 +54,7 @@ class Generic_Learning_Alg:
                 self.best_players_to_draw.append(player)
 
         for player in self.game_window.player_list:
+            player.model.to('cuda')
             player.isActive = True
         t = Timer(EPOCH_TIME, self.on_cycle_end)
         t.start()

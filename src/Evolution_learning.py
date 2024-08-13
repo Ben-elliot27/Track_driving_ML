@@ -62,7 +62,7 @@ class Net(nn.Module):
 class Evolution_learning(Generic_Learning_Alg):
 
     def __init__(self, game_window, update_freq=None):
-        super.__init__(game_window, update_freq, Net().linear_relu.double())
+        super().__init__(game_window, update_freq, Net().linear_relu.double())
 
     def set_players_new_NN(self):
         """
