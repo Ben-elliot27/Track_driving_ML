@@ -80,7 +80,7 @@ class Evolution_learning(Generic_Learning_Alg):
                         if a % 2 == 0:
                             mult_arr = (SIGMA / (self.epochs ** RATE_RAND)) * RNG.standard_normal(
                                 size=best_player.model[a].weight.shape)
-                            player.model[a].weight = nn.Parameter(best_player.model[a].weight + mult_arr)
+                            player.model[a].weight = nn.Parameter(best_player.model[a].weight.cpu() + mult_arr)
             else:
                 with torch.no_grad():
                     best_player = self.best_players[i % NUM_BEST_PLAYERS]

@@ -450,7 +450,6 @@ class MyGame(arcade.View):
         :return:
         """
         self.player_list.update()  # Updates player movement
-        print(delta_time)
         if self.menu_setting:
             pass
         else:
@@ -466,7 +465,6 @@ class MyGame(arcade.View):
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
-        print(key, modifiers)
         if not self.menu_setting:
             # Save the current model
             if key == arcade.key.S:

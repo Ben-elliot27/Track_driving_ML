@@ -173,7 +173,7 @@ class Player(arcade.Sprite):
         for dist in self.ray_distance:
             nn_list.append(dist / 10)
         self.NN_inputs = nn_list
-        pred = self.model(torch.tensor(self.NN_inputs, dtype=torch.float64, device='cuda'))
+        pred = self.model(torch.tensor(self.NN_inputs, dtype=torch.float64, device='cpu'))
         move = torch.softmax(pred, dim=0)
         move = move.detach().cpu().numpy()
 
